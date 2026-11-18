@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
+import { Navbar } from "@/components/home/navbar";
+import { Footer } from "@/components/home/footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,7 +28,9 @@ export const metadata: Metadata = {
 // of the wrong theme. Kept inline and minimal on purpose.
 const themeScript = `(function(){try{var t=localStorage.getItem("theme");if(t!=="light"&&t!=="dark"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.dataset.theme=t}catch(e){}})();`;
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
       lang="en"
@@ -36,7 +41,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-full flex flex-col">
+        <Navbar />
         {children}
+        <Toaster position="top-right" richColors />
+        <Footer />
       </body>
     </html>
   );

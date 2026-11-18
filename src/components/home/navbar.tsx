@@ -4,7 +4,6 @@ import { signOut, useSession } from "@/lib/auth-client";
 import { siteConfig } from "@/config/site";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
-  Forklift,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -14,6 +13,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
+import Logo from "./logo";
 
 // The scrolled state lives in the DOM (scroll position), read via
 // useSyncExternalStore so no effects or cascading setState are needed.
@@ -35,18 +35,6 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function Logo() {
-  return (
-    <Link href="/" className="flex items-center gap-2.5">
-      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-content shadow-sm">
-        <Forklift className="h-5 w-5" aria-hidden />
-      </span>
-      <span className="text-xl font-bold tracking-tight text-base-content">
-        {siteConfig.name}
-      </span>
-    </Link>
-  );
-}
 
 export function Navbar() {
   const pathname = usePathname();
