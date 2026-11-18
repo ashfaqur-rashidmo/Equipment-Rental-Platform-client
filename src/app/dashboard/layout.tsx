@@ -5,13 +5,18 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useSession } from "@/lib/auth-client";
 import CustomerDashboardSidebar from "@/app/component/CustomerDashboard/DashboardSidebar";
 import OwnerDashboardSidebar from "@/app/component/OwnerDashboard/DashboardSidebar";
+import AdminDashboardSidebar from "@/app/component/AdminDashboard/AdminDashboardSidebar";
 
 const layout = ({ children }: { children: React.ReactNode }) => {
   const { data: session } = useSession();
   const role = (session?.user as { role?: string })?.role;
-  const isOwner = role === "owner";
 
-  const DashboardSidebar = isOwner ? OwnerDashboardSidebar : CustomerDashboardSidebar;
+  let DashboardSidebar = CustomerDashboardSidebar;
+  if (role === "owner") {
+    DashboardSidebar = OwnerDashboardSidebar;
+  } else if (role === "admin") {
+    DashboardSidebar = AdminDashboardSidebar;
+  }
 
   return (
     <SidebarProvider>
