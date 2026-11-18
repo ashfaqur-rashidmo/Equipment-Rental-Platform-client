@@ -12,9 +12,9 @@ const layout = ({ children }: { children: React.ReactNode }) => {
   const role = (session?.user as { role?: string })?.role;
 
   let DashboardSidebar = CustomerDashboardSidebar;
-  if (role === "owner") {
+  if (role === "Owner") {
     DashboardSidebar = OwnerDashboardSidebar;
-  } else if (role === "admin") {
+  } else if (role === "Admin") {
     DashboardSidebar = AdminDashboardSidebar;
   }
 

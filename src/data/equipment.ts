@@ -31,6 +31,22 @@ export interface Equipment {
   owner: EquipmentOwner;
 }
 
+
+
+export interface EquipmentItem {
+  _id?: string;
+  id?: string;
+  name: string;
+  category: string;
+  status: string;
+  rentalPrice: string | number;
+  availableQuantity: number;
+  location: string;
+  image?: string;
+  ownerId?: string;
+  ownerEmail?: string;
+}
+
 /**
  * Seed data used until the Express + MongoDB backend is connected.
  * The shape mirrors the server's equipment collection so the swap is

@@ -4,6 +4,7 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
+import { DASHBOARD_ROUTES, UserRole } from "@/config/site";
 import {
   Sidebar,
   SidebarContent,
@@ -17,20 +18,9 @@ import {
   SidebarGroupContent,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
-import {
-  Package,
-  CalendarClock,
-  CreditCard,
-  User,
-  LogOut,
-} from "lucide-react";
+import { Package, CalendarClock, User, LogOut } from "lucide-react";
 
-const navItems = [
-  { href: "/dashboard/owner", label: "My Equipment", icon: Package },
-  { href: "/dashboard/owner/bookings", label: "Rental Requests", icon: CalendarClock },
-  { href: "/dashboard/owner/earnings", label: "Earnings", icon: CreditCard },
-  { href: "/dashboard/owner/profile", label: "Profile", icon: User },
-];
+const navItems = DASHBOARD_ROUTES.Owner.subRoutes ?? [];
 
 export default function OwnerDashboardSidebar() {
   const pathname = usePathname();
@@ -63,14 +53,19 @@ export default function OwnerDashboardSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.href);
+                const active = isActive(item.path);
+                const Icon =
+                  item.label === "My Equipment"
+                    ? Package
+                    : item.label === "My Equipment Rental"
+                      ? CalendarClock
+                      : User;
                 return (
-                  <SidebarMenuItem key={item.href}>
+                  <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton
                       render={
                         <Link
-                          href={item.href}
+                          href={item.path}
                           className="w-full"
                           onClick={() => {}}
                         >

@@ -6,38 +6,63 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { authClient } from "@/lib/auth-client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
 
-  const HandleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  
+const router = useRouter();
 
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-    const collectedForm = {
-      email: String(formData.get("email") ?? ""),
-      password: String(formData.get("password") ?? ""),
-    };
+const HandleSignIn = async (
+  e: React.FormEvent<HTMLFormElement>
+) => {
+  e.preventDefault();
 
-   setIsLoading(true);
+  const form = e.currentTarget;
+  const formData = new FormData(form);
 
-   try {
-     await authClient.signIn.email({
-       email: collectedForm.email,
-       password: collectedForm.password,
-     });
-   }
-    catch (error) {
-      console.error("Error signing in:", error);
-    } finally {
-      setIsLoading(false);
-    }
-    
-    // Reset the form after submission
-    form.reset();
+  const email = String(formData.get("email") ?? "");
+  const password = String(formData.get("password") ?? "");
 
+  if (!email || !password) {
+    toast.error("Please enter your email and password.");
+    return;
   }
+
+  setIsLoading(true);
+
+  try {
+    const { data, error } = await authClient.signIn.email({
+      email,
+      password,
+    });
+
+    if (error) {
+      toast.error(error.message || "Login failed.");
+      return;
+    }
+
+    toast.success("Login successful!");
+
+    const role = data.user.role;
+
+    if (role === "Admin") {
+      router.push("/dashboard/admin");
+    } else if (role === "Owner") {
+      router.push("/dashboard/owner");
+    } else {
+      router.push("/dashboard/customer");
+    }
+  } catch (error) {
+    console.error("Login error:", error);
+    toast.error("Something went wrong. Please try again.");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <motion.div
@@ -89,9 +114,13 @@ export default function LoginPage() {
           </label>
         </div>
 
-        <button type="submit" className="btn btn-primary btn-block mt-2">
-          Login
-        </button>
+        <button
+  type="submit"
+  disabled={isLoading}
+  className="btn btn-primary btn-block mt-2"
+>
+  {isLoading ? "Logging in..." : "Login"}
+</button>
 
         <div className="flex items-center gap-3 py-1">
           <span className="h-px flex-1 bg-base-300" />

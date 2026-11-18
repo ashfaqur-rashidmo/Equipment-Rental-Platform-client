@@ -19,6 +19,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 
+
+type SignUpRole = "Customer" | "Owner";
+
 const passwordRules = [
   "At least 6 characters",
   "One uppercase letter (A–Z)",
@@ -37,6 +40,7 @@ export default function RegisterPage() {
   const [imageUrl, setImageUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState<SignUpRole>("Customer");
 
   // Upload image to ImgBB
   const uploadImage = async (imageFile: File): Promise<string> => {
@@ -182,6 +186,7 @@ export default function RegisterPage() {
         email,
         password,
         image: imageUrl.trim() || undefined,
+        role,
       });
 
       if (error) {
@@ -321,6 +326,27 @@ export default function RegisterPage() {
                 />
               </label>
             </div>
+
+
+{/* Account Type */}
+<div>
+  <label htmlFor="role" className="label pb-1">
+    <span className="label-text font-medium">
+      Select Account Type
+    </span>
+  </label>
+
+  <select
+    id="role"
+    value={role}
+    onChange={(e) => setRole(e.target.value as SignUpRole)}
+    className="select select-bordered w-full"
+  >
+    <option value="Customer">Customer - Rent equipment</option>
+    <option value="Owner">Equipment Owner - Rent out equipment</option>
+  </select>
+</div>
+
 
             {/* Profile Photo: Direct URL */}
             <div>

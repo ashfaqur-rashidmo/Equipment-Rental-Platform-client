@@ -4,6 +4,7 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
+import { DASHBOARD_ROUTES, UserRole } from "@/config/site";
 import {
   Sidebar,
   SidebarContent,
@@ -26,13 +27,7 @@ import {
   LogOut,
 } from "lucide-react";
 
-const navItems = [
-  { href: "/dashboard/admin", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/admin/users", label: "All Users", icon: Users },
-  { href: "/dashboard/admin/equipment", label: "All Equipment", icon: Package },
-  { href: "/dashboard/admin/rentals", label: "All Rentals", icon: CalendarClock },
-  { href: "/dashboard/admin/profile", label: "My Profile", icon: User },
-];
+const navItems = DASHBOARD_ROUTES.Admin.subRoutes ?? [];
 
 export default function AdminDashboardSidebar() {
   const pathname = usePathname();
@@ -63,14 +58,23 @@ export default function AdminDashboardSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.href);
+                const active = isActive(item.path);
+                const Icon =
+                  item.label === "Overview"
+                    ? LayoutDashboard
+                    : item.label === "All Users"
+                      ? Users
+                      : item.label === "All Equipment"
+                        ? Package
+                        : item.label === "All Rentals"
+                          ? CalendarClock
+                          : User;
                 return (
-                  <SidebarMenuItem key={item.href}>
+                  <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton
                       render={
                         <Link
-                          href={item.href}
+                          href={item.path}
                           className="w-full"
                           onClick={() => {}}
                         >

@@ -1,11 +1,11 @@
 import React from 'react';
 
 const OwnerDashboardPage = () => {
-    return (
-        <div>
-            owner Dashboard View
-        </div>
-    );
+  return (
+    <div>
+      owner dashboard page
+    </div>
+  );
 };
 
 export default OwnerDashboardPage;

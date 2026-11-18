@@ -1,7 +1,7 @@
 "use client";
 
 import { signOut, useSession } from "@/lib/auth-client";
-import { siteConfig } from "@/config/site";
+import { siteConfig, DASHBOARD_ROUTES, UserRole } from "@/config/site";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   LayoutDashboard,
@@ -139,12 +139,23 @@ export function Navbar() {
                       {user.name} · {user.email}
                     </li>
                     <li>
-                      <Link href="/dashboard" onClick={closeMenus}>
+                      <Link
+                        href={
+                          DASHBOARD_ROUTES[
+                            ((user as { role?: string }).role ||
+                              "Customer") as UserRole
+                          ].path
+                        }
+                        onClick={closeMenus}
+                      >
                         <LayoutDashboard className="h-4 w-4" /> Dashboard
                       </Link>
                     </li>
                     <li>
-                      <Link href="/dashboard/profile" onClick={closeMenus}>
+                      <Link
+                        href={`/dashboard/${(user as { role?: string }).role || "customer"}/profile`}
+                        onClick={closeMenus}
+                      >
                         <User className="h-4 w-4" /> Profile
                       </Link>
                     </li>
@@ -231,7 +242,12 @@ export function Navbar() {
                     </div>
                   </div>
                   <Link
-                    href="/dashboard"
+                    href={
+                      DASHBOARD_ROUTES[
+                        ((user as { role?: string }).role ||
+                          "Customer") as UserRole
+                      ].path
+                    }
                     onClick={closeMenus}
                     className="btn btn-primary btn-block btn-sm"
                   >
