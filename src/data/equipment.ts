@@ -37,15 +37,23 @@ export interface EquipmentItem {
   _id?: string;
   id?: string;
   name: string;
+  description?: string;
   category: string;
   status: string;
-  RentalType: RentalType;
+  /** "Daily" | "Weekly" | "Monthly" as stored by the API. */
+  rentalType?: string;
   rentalPrice: string | number;
   availableQuantity: number;
   location: string;
+  brand?: string;
+  model?: string;
+  condition?: string;
+  terms?: string;
+  ownerName?: string;
+  ownerEmail?: string;
+  createdAt?: string;
   image?: string;
   ownerId?: string;
-  ownerEmail?: string;
 }
 
 /**

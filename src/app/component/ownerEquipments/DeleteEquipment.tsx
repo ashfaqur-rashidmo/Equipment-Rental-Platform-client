@@ -78,16 +78,18 @@ export default function DeleteEquipment({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-error hover:bg-error/10"
-          title="Delete Equipment"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+      <DialogTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-error hover:bg-error/10"
+            title="Delete Equipment"
+          />
+        }
+      >
+        <Trash2 className="h-4 w-4" />
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-md">
@@ -102,14 +104,12 @@ export default function DeleteEquipment({
         </DialogHeader>
 
         <DialogFooter>
-          <DialogClose asChild>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={deleting}
-            >
-              Cancel
-            </Button>
+          <DialogClose
+            render={
+              <Button type="button" variant="outline" disabled={deleting} />
+            }
+          >
+            Cancel
           </DialogClose>
 
           <Button
