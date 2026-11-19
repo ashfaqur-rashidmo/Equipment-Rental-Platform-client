@@ -1,11 +1,11 @@
 import React from 'react';
 
-const AllEquipmentsPage = () => {
+const page = () => {
     return (
         <div>
-            all equipments page
+            
         </div>
     );
 };
 
-export default AllEquipmentsPage;
+export default page;

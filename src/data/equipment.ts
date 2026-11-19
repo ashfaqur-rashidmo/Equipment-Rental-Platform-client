@@ -39,6 +39,7 @@ export interface EquipmentItem {
   name: string;
   category: string;
   status: string;
+  RentalType: RentalType;
   rentalPrice: string | number;
   availableQuantity: number;
   location: string;
