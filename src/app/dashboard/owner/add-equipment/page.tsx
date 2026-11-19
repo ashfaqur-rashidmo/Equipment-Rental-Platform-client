@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Upload, Save, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import CategorySelect from "@/app/component/ownerEquipments/CategorySelect";
 
 const categories = [
   "Construction",
@@ -359,33 +360,15 @@ export default function AddEquipmentPage() {
             </div>
 
             {/* Category */}
-            <div className="space-y-2">
-              <label className="label pb-1">
-                <span className="label-text font-medium">
-                  Category
-                </span>
-              </label>
-
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className={`select select-bordered h-8 w-full rounded-lg border-border bg-transparent ${
-                  !formData.category ? "text-base-content/40" : ""
-                }`}
-                required
-              >
-                <option value="" disabled>
-                  Select a category
-                </option>
-
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
+           <CategorySelect
+  value={formData.category}
+  onChange={(value) =>
+    setFormData((prev) => ({
+      ...prev,
+      category: value,
+    }))
+  }
+/>
 
             {/* Brand */}
             <div className="space-y-2">

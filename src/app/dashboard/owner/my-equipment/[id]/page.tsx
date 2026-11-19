@@ -16,6 +16,7 @@ import {
   ArrowLeft,
   RefreshCw,
 } from "lucide-react";
+import Image from "next/image";
 
 interface EquipmentItem {
   _id?: string;
@@ -259,13 +260,16 @@ export default function EquipmentDetailsPage() {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Equipment Image */}
           <div className="relative h-64 w-full lg:w-1/3 shrink-0 rounded-lg overflow-hidden border border-base-300 bg-base-200">
-            {equipment.image ? (
-              <img
-                src={equipment.image}
-                alt={equipment.name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
+            {equipment.image?.trim() ? (
+  <Image
+    height={256}
+    width={256}
+    src={equipment.image}
+    alt={equipment.name || "Equipment"}
+    className="h-full w-full object-cover"
+    unoptimized
+  />
+) : (
               <div className="h-full w-full flex items-center justify-center bg-base-200 text-base-content/40">
                 <Package className="h-12 w-12" />
               </div>
