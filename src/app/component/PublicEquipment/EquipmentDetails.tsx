@@ -13,6 +13,8 @@ import {
   User,
 } from "lucide-react";
 import { EquipmentItem } from "@/data/equipment";
+import AddFavoriteButton from "./AddFavoriteButton";
+import BookEquipmentModal from "./BookEquipmentModal";
 
 interface EquipmentDetailsProps {
   equipment: EquipmentItem;
@@ -26,6 +28,7 @@ const EquipmentDetails = ({ equipment }: EquipmentDetailsProps) => {
   const price = Number(equipment.rentalPrice).toLocaleString("en-BD");
   const isAvailable = equipment.availableQuantity > 0;
   const hasImage = Boolean(equipment.image?.trim());
+  const equipmentId = equipment._id || equipment.id || "";
 
   /** Label + value pairs shown in the summary card. */
   const specs = [
@@ -165,6 +168,18 @@ const EquipmentDetails = ({ equipment }: EquipmentDetailsProps) => {
                   </div>
                 ))}
               </dl>
+            </div>
+
+            {/* Book + Favorite */}
+            <div className="space-y-3 rounded-box border border-base-300 bg-base-100 p-6">
+              <BookEquipmentModal
+                equipmentId={equipmentId}
+                equipmentName={equipment.name}
+                rentalPrice={Number(equipment.rentalPrice) || 0}
+                rentalType={equipment.rentalType}
+              />
+
+              <AddFavoriteButton equipmentId={equipmentId} />
             </div>
 
             {/* Owner Information */}

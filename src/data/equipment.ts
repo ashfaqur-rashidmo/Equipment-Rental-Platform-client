@@ -61,6 +61,8 @@ export interface EquipmentItem {
  * The shape mirrors the server's equipment collection so the swap is
  * a fetch call away. Images are stored locally in /public/images.
  */
+
+
 export const equipmentList: Equipment[] = [
   {
     id: "eq-001",

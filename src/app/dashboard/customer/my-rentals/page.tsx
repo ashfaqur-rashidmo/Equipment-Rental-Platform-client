@@ -1,53 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, Clock, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { GetMyRentals, Rental } from "@/lib/api/rentals";
+import {
+  CreditCard,
+  Clock,
+  CalendarDays,
+  PackageOpen,
+  Loader2,
+  AlertTriangle,
+} from "lucide-react";
 import Link from "next/link";
-
-const rentals = [
-  {
-    id: "1",
-    equipmentName: "Excavator CAT 320",
-    startDate: "2026-11-20",
-    endDate: "2026-11-25",
-    bookingDate: "2026-11-10",
-    totalAmount: "$1,250.00",
-    paymentStatus: "Paid",
-    bookingStatus: "Confirmed",
-  },
-  {
-    id: "2",
-    equipmentName: "DJI Mavic 3 Drone",
-    startDate: "2026-11-22",
-    endDate: "2026-11-23",
-    bookingDate: "2026-11-15",
-    totalAmount: "$180.00",
-    paymentStatus: "Pending",
-    bookingStatus: "Pending",
-  },
-  {
-    id: "3",
-    equipmentName: "Portable Generator 5kW",
-    startDate: "2026-11-28",
-    endDate: "2026-12-02",
-    bookingDate: "2026-11-16",
-    totalAmount: "$320.00",
-    paymentStatus: "Paid",
-    bookingStatus: "Confirmed",
-  },
-  {
-    id: "4",
-    equipmentName: "Scaffold Tower 6m",
-    startDate: "2026-12-01",
-    endDate: "2026-12-07",
-    bookingDate: "2026-11-17",
-    totalAmount: "$450.00",
-    paymentStatus: "Failed",
-    bookingStatus: "Cancelled",
-  },
-];
+import { formatDate } from "@/lib/utils";
+import DashboardHeader from "@/app/component/Dashboard/DashboardHeader";
+import StateCard from "@/app/component/Dashboard/StateCard";
 
 const PaymentStatusBadge = ({ status }: { status: string }) => {
   const variants: Record<string, string> = {
@@ -76,77 +44,181 @@ const BookingStatusBadge = ({ status }: { status: string }) => {
 };
 
 export default function CustomerRentalsPage() {
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
   const user = session?.user;
+  const userId = user?.id;
+
+  const [state, setState] = useState<{
+    userId: string;
+    rentals: Rental[];
+    error?: string;
+  } | null>(null);
+
+  // Load the bookings of the logged-in customer.
+  useEffect(() => {
+    if (!userId) return;
+
+    let cancelled = false;
+
+    GetMyRentals(userId)
+      .then((rows) => {
+        if (!cancelled) setState({ userId, rentals: rows });
+      })
+      .catch((err: Error) => {
+        if (!cancelled) setState({ userId, rentals: [], error: err.message });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  // Only trust data that belongs to the user we just asked for.
+  const current = state && state.userId === userId ? state : null;
+  const rentals = current?.rentals ?? [];
+  const error = current?.error ?? null;
+  const showLoader = isPending || (Boolean(userId) && !current);
+
+  const hasRows = !showLoader && !error && rentals.length > 0;
 
   return (
     <div className="mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-base-content">My Rentals</h1>
-          <p className="text-sm text-base-content/60">
-            Manage your equipment rental bookings
-          </p>
-        </div>
-        <Link
-          href="/dashboard/favorites"
-          className="btn btn-outline btn-sm"
-        >
-          <span>Go to Favorites</span>
-        </Link>
-      </div>
+      <DashboardHeader
+        title="My Rentals"
+        subtitle="Manage your equipment rental bookings"
+        user={user}
+        action={
+          <Link
+            href="/dashboard/customer/favorites"
+            className="btn btn-outline btn-sm"
+          >
+            <span>Go to Favorites</span>
+          </Link>
+        }
+      />
 
-      {user && (
-        <div className="mb-4 flex items-center gap-2 text-sm text-base-content/70">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-base-200 text-base-content">
-            {user.name?.charAt(0).toUpperCase() || "C"}
-          </div>
-          <span>Logged in as {user.name}</span>
-        </div>
+      {/* Not logged in */}
+      {!isPending && !user && (
+        <StateCard
+          icon={PackageOpen}
+          title="Please log in"
+          description="You need to be logged in to see your rental bookings."
+          action={
+            <Link href="/login" className="btn btn-primary btn-sm">
+              Go to Login
+            </Link>
+          }
+        />
       )}
 
-      <div className="rounded-box border border-base-300 bg-base-100 shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="table">
-            <thead>
-              <tr className="text-base-content/60">
-                <th>Equipment Name</th>
-                <th>Rental Start Date</th>
-                <th>Rental End Date</th>
-                <th>Booking Date</th>
-                <th>Total Amount</th>
-                <th>Payment Status</th>
-                <th>Booking Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rentals.map((rental) => (
-                <tr key={rental.id}>
-                  <td className="font-medium">
-                    {rental.equipmentName}
-                  </td>
-                  <td>
-                    <Clock className="mr-2 h-4 w-4 shrink-0 text-base-content/40" />
-                    {rental.startDate}
-                  </td>
-                  <td>
-                    <Clock className="mr-2 h-4 w-4 shrink-0 text-base-content/40" />
-                    {rental.endDate}
-                  </td>
-                  <td>{rental.bookingDate}</td>
-                  <td className="font-medium">{rental.totalAmount}</td>
-                  <td>
-                    <PaymentStatusBadge status={rental.paymentStatus} />
-                  </td>
-                  <td>
-                    <BookingStatusBadge status={rental.bookingStatus} />
-                  </td>
+      {/* Loading */}
+      {showLoader && (
+        <StateCard
+          variant="loading"
+          icon={Loader2}
+          description="Loading your rentals..."
+        />
+      )}
+
+      {/* Error */}
+      {!showLoader && error && (
+        <StateCard
+          variant="error"
+          icon={AlertTriangle}
+          title={error}
+          description="We could not load your bookings."
+          action={
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="btn btn-outline btn-sm"
+            >
+              Try again
+            </button>
+          }
+        />
+      )}
+
+      {/* Empty */}
+      {!showLoader && !error && rentals.length === 0 && (
+        <StateCard
+          icon={PackageOpen}
+          title="No rentals yet"
+          description="Rent an equipment and your bookings will show up here."
+          action={
+            <Link href="/all-equipment" className="btn btn-primary btn-sm">
+              Browse Equipment
+            </Link>
+          }
+        />
+      )}
+
+      {/* Bookings table */}
+      {hasRows && (
+        <div className="rounded-box border border-base-300 bg-base-100 shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="table">
+              <thead>
+                <tr className="text-base-content/60">
+                  <th>Equipment Name</th>
+                  <th>Rental Start Date</th>
+                  <th>Rental End Date</th>
+                  <th>Booking Date</th>
+                  <th>Total Amount</th>
+                  <th>Payment Status</th>
+                  <th>Booking Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rentals.map((rental) => (
+                  <tr key={rental._id}>
+                    <td className="font-medium">
+                      <Link
+                        href={`/all-equipment/${rental.equipmentId}`}
+                        className="link link-hover"
+                      >
+                        {rental.equipmentName}
+                      </Link>
+                    </td>
+                    <td>
+                      <span className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 shrink-0 text-base-content/40" />
+                        {formatDate(rental.startDate)}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 shrink-0 text-base-content/40" />
+                        {formatDate(rental.endDate)}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="flex items-center gap-2">
+                        <CalendarDays className="h-4 w-4 shrink-0 text-base-content/40" />
+                        {formatDate(rental.bookingDate)}
+                      </span>
+                    </td>
+                    <td className="font-medium">
+                      ৳{Number(rental.totalAmount || 0).toLocaleString("en-US")}
+                    </td>
+                    <td>
+                      <PaymentStatusBadge status={rental.paymentStatus} />
+                    </td>
+                    <td>
+                      <BookingStatusBadge status={rental.bookingStatus} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex items-center gap-2 border-t border-base-300 px-4 py-3 text-xs text-base-content/50">
+            <CreditCard className="h-3.5 w-3.5" />
+            {rentals.length} booking{rentals.length !== 1 ? "s" : ""} on file
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

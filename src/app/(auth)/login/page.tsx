@@ -6,10 +6,12 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { authClient } from "@/lib/auth-client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo") ?? "/";
   const [isLoading, setIsLoading] = useState(false)
 
   
@@ -37,6 +39,8 @@ const HandleSignIn = async (
     const { data, error } = await authClient.signIn.email({
       email,
       password,
+      rememberMe: true,
+      callbackURL: redirectTo,
     });
 
     if (error) {
@@ -45,6 +49,13 @@ const HandleSignIn = async (
     }
 
     toast.success("Login successful!");
+
+    // Go back to where the login started (e.g. the booking form),
+    // otherwise land on the role's dashboard.
+    if (redirectTo && redirectTo !== "/") {
+      router.push(redirectTo);
+      return;
+    }
 
     const role = data.user.role;
 
