@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
-import { Badge } from "@/components/ui/badge";
 import { GetMyRentals, Rental } from "@/lib/api/rentals";
 import {
   CreditCard,
@@ -16,32 +15,10 @@ import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import DashboardHeader from "@/app/component/Dashboard/DashboardHeader";
 import StateCard from "@/app/component/Dashboard/StateCard";
-
-const PaymentStatusBadge = ({ status }: { status: string }) => {
-  const variants: Record<string, string> = {
-    Paid: "badge-success",
-    Pending: "badge-warning",
-    Failed: "badge-error",
-  };
-  return (
-    <Badge className={variants[status] || "badge-outline"}>
-      {status}
-    </Badge>
-  );
-};
-
-const BookingStatusBadge = ({ status }: { status: string }) => {
-  const variants: Record<string, string> = {
-    Confirmed: "badge-success",
-    Pending: "badge-warning",
-    Cancelled: "badge-error",
-  };
-  return (
-    <Badge className={variants[status] || "badge-outline"}>
-      {status}
-    </Badge>
-  );
-};
+import {
+  BookingStatusBadge,
+  PaymentStatusBadge,
+} from "@/app/component/Dashboard/StatusBadges";
 
 export default function CustomerRentalsPage() {
   const { data: session, isPending } = useSession();
@@ -202,7 +179,18 @@ export default function CustomerRentalsPage() {
                       ৳{Number(rental.totalAmount || 0).toLocaleString("en-US")}
                     </td>
                     <td>
-                      <PaymentStatusBadge status={rental.paymentStatus} />
+                      <div className="flex items-center gap-2">
+                        <PaymentStatusBadge status={rental.paymentStatus} />
+
+                        {rental.paymentStatus !== "Paid" && (
+                          <Link
+                            href={`/dashboard/customer/payment/${rental._id}`}
+                            className="btn btn-primary btn-xs"
+                          >
+                            Pay
+                          </Link>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <BookingStatusBadge status={rental.bookingStatus} />

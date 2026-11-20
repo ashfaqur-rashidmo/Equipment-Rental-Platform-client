@@ -7,6 +7,9 @@ export interface Rental {
   equipmentName: string;
   customerId: string;
   customerName?: string;
+  contactNumber?: string;
+  deliveryAddress?: string;
+  notes?: string;
   startDate: string;
   endDate: string;
   quantity?: number;
@@ -28,6 +31,35 @@ export const GetMyRentals = async (userId: string): Promise<Rental[]> => {
 
   const data = await response.json();
   return Array.isArray(data) ? data : [];
+};
+
+/** All rentals on the logged-in owner's equipment, newest booking first. */
+export const GetOwnerRentals = async (ownerId: string): Promise<Rental[]> => {
+  const response = await fetch(
+    `${API_BASE_URL}/owner/rentals?ownerId=${encodeURIComponent(ownerId)}`,
+    { cache: "no-store" }
+  );
+
+  if (!response.ok) throw new Error("Failed to fetch rentals.");
+
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
+};
+
+/** One booking by its id — used by the payment page. */
+export const GetRentalById = async (id: string): Promise<Rental> => {
+  const response = await fetch(
+    `${API_BASE_URL}/rentals/${encodeURIComponent(id)}`,
+    { cache: "no-store" }
+  );
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(data?.error || "Failed to fetch the booking.");
+  }
+
+  return data;
 };
 
 export interface CreateRentalPayload {

@@ -96,7 +96,7 @@ const BookEquipmentModal = ({
     setSubmitting(true);
 
     try {
-      await ApplyForRental({
+      const booking = await ApplyForRental({
         equipmentId,
         equipmentName,
         customerId: user.id,
@@ -111,9 +111,10 @@ const BookEquipmentModal = ({
         notes: form.notes,
       });
 
-      toast.success("Booking successful! Track it under My Rentals.");
+      toast.success("Booking created! Complete your payment.");
       closeModal();
-      router.push("/payment");
+      // Straight to the payment page of the booking we just created.
+      router.push(`/dashboard/customer/payment/${booking._id}`);
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Failed to book the equipment."

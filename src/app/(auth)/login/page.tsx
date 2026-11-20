@@ -36,11 +36,12 @@ const HandleSignIn = async (
   setIsLoading(true);
 
   try {
+    // Navigation is handled explicitly below — no callbackURL here, otherwise
+    // BetterAuth would redirect to it ("/") and race the role-based push.
     const { data, error } = await authClient.signIn.email({
       email,
       password,
       rememberMe: true,
-      callbackURL: redirectTo,
     });
 
     if (error) {
