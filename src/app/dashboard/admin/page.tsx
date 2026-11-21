@@ -13,9 +13,9 @@ const stats = [
 ];
 
 const quickActions = [
-  { href: "/dashboard/admin/users", label: "Manage Users", icon: Users },
-  { href: "/dashboard/admin/equipment", label: "Review Equipment", icon: Package },
-  { href: "/dashboard/admin/rentals", label: "Monitor Rentals", icon: CalendarClock },
+  { href: "/dashboard/admin/all-users", label: "Manage Users", icon: Users },
+  { href: "/dashboard/admin/all-equipment", label: "Review Equipment", icon: Package },
+  { href: "/dashboard/admin/all-rentals", label: "Monitor Rentals", icon: CalendarClock },
 ];
 
 export default function AdminDashboardPage() {
