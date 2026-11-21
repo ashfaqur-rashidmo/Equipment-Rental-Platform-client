@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  User,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -48,11 +47,9 @@ export function Navbar() {
   );
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   function closeMenus() {
     setMobileOpen(false);
-    setUserMenuOpen(false);
   }
 
   async function handleSignOut() {
@@ -99,75 +96,22 @@ export function Navbar() {
               <div className="skeleton hidden h-4 w-16 sm:block" />
             </div>
           ) : user ? (
-            /* Desktop user menu */
-            <div className="relative hidden lg:block">
-              <button
-                type="button"
-                onClick={() => setUserMenuOpen((open) => !open)}
-                aria-haspopup="menu"
-                aria-expanded={userMenuOpen}
-                aria-label="Open user menu"
-                className="btn btn-circle btn-ghost avatar"
-              >
-                <div className="w-9 rounded-full ring ring-primary ring-offset-2 ring-offset-base-100">
-                  {user.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={user.image}
-                      alt={user.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-primary text-sm font-semibold text-primary-content">
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </div>
-              </button>
-
-              {userMenuOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setUserMenuOpen(false)}
+            /* Desktop avatar (dropdown removed) */
+            <div className="hidden lg:block">
+              <div className="w-9 rounded-full ring ring-primary ring-offset-2 ring-offset-base-100">
+                {user.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.image}
+                    alt={user.name}
+                    className="h-full w-full object-cover"
                   />
-                  <ul
-                    role="menu"
-                    className="menu dropdown-content absolute right-0 z-50 mt-2 w-60 rounded-box border border-base-300 bg-base-100 p-2 shadow-xl"
-                  >
-                    <li className="menu-title truncate">
-                      {user.name} · {user.email}
-                    </li>
-                    <li>
-                      <Link
-                        href={
-                          DASHBOARD_ROUTES[
-                            ((user as { role?: string }).role ||
-                              "Customer") as UserRole
-                          ].path
-                        }
-                        onClick={closeMenus}
-                      >
-                        <LayoutDashboard className="h-4 w-4" /> Dashboard
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href={`/dashboard/${(user as { role?: string }).role || "customer"}/profile`}
-                        onClick={closeMenus}
-                      >
-                        <User className="h-4 w-4" /> Profile
-                      </Link>
-                    </li>
-                    <div className="divider my-1" />
-                    <li>
-                      <button type="button" onClick={handleSignOut}>
-                        <LogOut className="h-4 w-4" /> Logout
-                      </button>
-                    </li>
-                  </ul>
-                </>
-              )}
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-primary text-sm font-semibold text-primary-content">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="hidden items-center gap-2 lg:flex">

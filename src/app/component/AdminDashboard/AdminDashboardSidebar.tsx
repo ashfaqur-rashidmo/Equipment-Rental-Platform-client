@@ -3,8 +3,8 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { useSession } from "@/lib/auth-client";
-import { DASHBOARD_ROUTES, UserRole } from "@/config/site";
+import { signOut, useSession } from "@/lib/auth-client";
+import { DASHBOARD_ROUTES, UserRole, siteConfig } from "@/config/site";
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +24,7 @@ import {
   Package,
   CalendarClock,
   User,
+  Forklift,
   LogOut,
 } from "lucide-react";
 
@@ -39,18 +40,44 @@ export default function AdminDashboardSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="px-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-primary text-primary-content flex items-center justify-center font-bold text-sm">
-            {user?.name?.charAt(0).toUpperCase() || "A"}
+      <SidebarHeader className="flex gap-4 border-b border-sidebar-border px-4 py-5">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-content shadow-sm">
+            <Forklift className="h-4 w-4" aria-hidden />
+          </span>
+          <span className="text-base font-bold tracking-tight text-sidebar-foreground">
+            {siteConfig.name}
+          </span>
+        </Link>
+
+        {/* User profile — avatar, name, role */}
+        {user && (
+          <div className="flex items-center gap-3">
+            <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full border-2 border-sidebar-border">
+              {user.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={user.image}
+                  alt={user.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-primary text-xs font-semibold text-primary-content">
+                  {user.name?.charAt(0).toUpperCase() || "U"}
+                </div>
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-sidebar-foreground">
+                {user.name}
+              </p>
+              <p className="truncate text-xs text-sidebar-foreground/60">
+                {(user as { role?: string })?.role || "Admin"}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-sidebar-foreground">
-              {user?.name || "Admin"}
-            </p>
-            <p className="text-xs text-sidebar-foreground/60">Administrator</p>
-          </div>
-        </div>
+        )}
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -97,14 +124,14 @@ export default function AdminDashboardSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   render={
-                    <Link
-                      href="/login"
+                    <button
+                      type="button"
+                      onClick={() => signOut()}
                       className="w-full text-destructive"
-                      onClick={() => {}}
                     >
                       <LogOut className="h-4 w-4 shrink-0" />
                       <span>Logout</span>
-                    </Link>
+                    </button>
                   }
                 />
               </SidebarMenuItem>

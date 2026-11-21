@@ -17,7 +17,6 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { formatPrice } from "@/data/equipment";
 import { cn } from "@/lib/utils";
@@ -25,267 +24,14 @@ import {
   GetCustomerDashboard,
   CustomerDashboardStats,
 } from "@/lib/api/customer-dashboard";
-import { Rental } from "@/lib/api/rentals";
+import StatcardHomeDashboard from "@/app/component/CustomerDashboard/StatcardHomeDashboard";
+import StatusPill from "@/app/component/CustomerDashboard/StatusPill";
+import MonthlySpendingChart from "@/app/component/CustomerDashboard/MonthlySpendingChart";
+import BookingCard from "@/app/component/CustomerDashboard/BookingCard";
+import EquipmentCard from "@/app/component/CustomerDashboard/EquipmentCard";
 
-/* --------------------------------------------------------------------------
-   Reusable stat card
-   -------------------------------------------------------------------------- */
-type StatCardProps = {
-  title: string;
-  value: string | number;
-  subtitle: string;
-  icon: React.ElementType;
-  iconColor?: string;
-};
 
-function StatCard({ title, value, subtitle, icon: Icon, iconColor }: StatCardProps) {
-  return (
-    <div className="rounded-xl border border-base-300 bg-base-100 p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-base-content/60 font-medium">{title}</p>
-          <p className="mt-1 text-3xl font-bold">{value}</p>
-          <p className={cn("text-xs font-medium mt-1", iconColor ?? "text-success")}>
-            {subtitle}
-          </p>
-        </div>
-        <div className="h-10 w-10 rounded-lg bg-base-200 flex items-center justify-center">
-          <Icon className="h-5 w-5 text-base-content/60" />
-        </div>
-      </div>
-    </div>
-  );
-}
 
-/* --------------------------------------------------------------------------
-   Reusable status pill
-   -------------------------------------------------------------------------- */
-type StatusPillProps = {
-  label: string;
-  value: number;
-  icon: React.ElementType;
-  color: string;
-  dotColor: string;
-};
-
-function StatusPill({ label, value, icon: Icon, color, dotColor }: StatusPillProps) {
-  return (
-    <div className={cn("rounded-xl border px-4 py-3 flex items-center justify-between", color)}>
-      <div className="flex items-center gap-2">
-        <div className={`h-6 w-6 rounded-full ${dotColor} flex items-center justify-center text-white text-[10px]`}>
-          <Icon className="h-3 w-3" />
-        </div>
-        <p className="text-sm font-semibold">{label}</p>
-      </div>
-      <span className="text-sm font-bold">{value}</span>
-    </div>
-  );
-}
-
-/* --------------------------------------------------------------------------
-   Monthly Spending — animated area chart (last 6 months)
-   -------------------------------------------------------------------------- */
-type MonthlySpendingChartProps = {
-  data: { month: string; amount: number }[];
-};
-
-function MonthlySpendingChart({ data }: MonthlySpendingChartProps) {
-  const months = data.map((d) => d.month);
-  const values = data.map((d) => d.amount);
-  const maxY = Math.max(1600, ...values, 1);
-
-  const chartWidth = 360;
-  const chartHeight = 190;
-  const padding = { top: 16, right: 16, bottom: 34, left: 44 };
-  const plotW = chartWidth - padding.left - padding.right;
-  const plotH = chartHeight - padding.top - padding.bottom;
-
-  const xPoints = months.map((_, i) => padding.left + (i / Math.max(months.length - 1, 1)) * plotW);
-  const yPoints = values.map((v) => padding.top + plotH - (v / maxY) * plotH);
-
-  const linePath = values.reduce(
-    (d, v, i) => `${d}${i === 0 ? "M" : "L"}${xPoints[i]},${yPoints[i]}`,
-    ""
-  );
-
-  const yTicks = [0, 400, 800, 1200, 1600];
-
-  return (
-    <svg
-      width={chartWidth}
-      height={chartHeight}
-      viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="w-full max-w-md"
-    >
-      <defs>
-        <linearGradient id="areaGradient" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#ea580c" stopOpacity="0.55" />
-          <stop offset="100%" stopColor="#ea580c" stopOpacity="0.05" />
-        </linearGradient>
-      </defs>
-
-      {/* Y axis ticks */}
-      {yTicks.map((tick) => {
-        const y = padding.top + plotH - (tick / maxY) * plotH;
-        return (
-          <g key={tick}>
-            <line
-              x1={padding.left - 6}
-              x2={padding.left}
-              y1={y}
-              y2={y}
-              stroke="#cbd5e1"
-              strokeWidth={1}
-            />
-            <text
-              x={padding.left - 10}
-              y={y + 4}
-              fontSize={11}
-              fill="#64748b"
-              textAnchor="end"
-            >
-              {tick}
-            </text>
-          </g>
-        );
-      })}
-
-      {/* X axis labels */}
-      {months.map((m, i) => (
-        <text
-          key={m}
-          x={xPoints[i]}
-          y={padding.top + plotH + 20}
-          fontSize={12}
-          fill="#94a3b8"
-          textAnchor="middle"
-        >
-          {m}
-        </text>
-      ))}
-
-      {/* Area fill */}
-      <path
-        d={`${linePath} L${xPoints[xPoints.length - 1]},${padding.top + plotH} L${xPoints[0]},${padding.top + plotH} Z`}
-        fill="url(#areaGradient)"
-      />
-      {/* Animated line */}
-      <motion.path
-        d={linePath}
-        stroke="#ea580c"
-        strokeWidth={2.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={{ strokeDasharray: 600, strokeDashoffset: 600 }}
-        initial={{ strokeDashoffset: 600 }}
-        animate={{ strokeDashoffset: 0 }}
-        transition={{ duration: 1.2, ease: "easeInOut" }}
-      />
-      {/* Animated dots */}
-      {xPoints.map((x, i) => (
-        <motion.circle
-          key={i}
-          cx={x}
-          cy={yPoints[i]}
-          r={4}
-          fill="#ea580c"
-          stroke="#ffffff"
-          strokeWidth={2}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.6 + i * 0.08, duration: 0.4 }}
-        />
-      ))}
-    </svg>
-  );
-}
-
-/* --------------------------------------------------------------------------
-   Reusable booking card (Recent Bookings list)
-   -------------------------------------------------------------------------- */
-type BookingCardProps = {
-  rental: Rental;
-};
-
-function BookingCard({ rental }: BookingCardProps) {
-  return (
-    <div className="rounded-xl border border-base-200 bg-base-100 p-4 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-base-content truncate">
-            {rental.equipmentName}
-          </p>
-          <p className="text-xs text-base-content/60 mt-0.5">
-            Rented by: {rental.customerName} · {formatPrice(rental.totalAmount)}
-          </p>
-        </div>
-        <Badge
-          variant={
-            rental.bookingStatus === "Confirmed"
-              ? "success"
-              : rental.bookingStatus === "Cancelled"
-                ? "error"
-                : "warning"
-          }
-        >
-          {rental.bookingStatus}
-        </Badge>
-      </div>
-    </div>
-  );
-}
-
-/* --------------------------------------------------------------------------
-   Reusable equipment card (Favorite Equipment list)
-   -------------------------------------------------------------------------- */
-type EquipmentCardProps = {
-  equipment: NonCustomerFavorite;
-};
-
-type NonCustomerFavorite = {
-  name: string;
-  rentalPrice: string | number;
-  rentalType?: string;
-  availableQuantity?: number;
-  image?: string;
-};
-
-function EquipmentCard({ equipment }: EquipmentCardProps) {
-  return (
-    <div className="rounded-xl border border-base-200 bg-base-100 p-3 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-center gap-3">
-        <div className="shrink-0">
-          <img
-            src={equipment.image || "/images/equipment/hero.jpg"}
-            alt={equipment.name}
-            className="h-12 w-12 object-cover rounded-md bg-base-200"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = "/images/equipment/hero.jpg";
-            }}
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-base-content truncate">
-            {equipment.name}
-          </p>
-          <p className="text-xs text-base-content/60 mt-0.5">
-            {equipment.rentalPrice} / {equipment.rentalType?.toLowerCase() ?? "daily"} · Stock:{" "}
-            {equipment.availableQuantity ?? 0}
-          </p>
-        </div>
-        <Badge variant="success" size="sm">
-          Approved
-        </Badge>
-      </div>
-    </div>
-  );
-}
-
-/* --------------------------------------------------------------------------
-   Customer dashboard page
-   -------------------------------------------------------------------------- */
 export default function CustomerDashboardPage() {
   const { data: session, isPending } = useSession();
   const user = session?.user;
@@ -359,30 +105,10 @@ export default function CustomerDashboardPage() {
                 Customer Overview
               </span>
               <button className="relative p-2 text-base-content/60 hover:text-base-content focus:outline-none">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-5 w-5"
-                >
-                  <path d="M15 18h5v-18H0v21h18" />
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                </svg>
+                
                 <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-error"></span>
               </button>
-              <img
-                src="/images/equipment/avatar.jpg"
-                alt="User avatar"
-                className="h-8 w-8 rounded-full object-cover border border-base-300 bg-base-200"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23d97706'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-family='sans-serif' font-size='16' font-weight='bold'%3EO%3C/text%3E%3C/svg%3E";
-                }}
-              />
+             
             </div>
           </div>
         </div>
@@ -476,7 +202,7 @@ export default function CustomerDashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 }}
               >
-                <StatCard
+                <StatcardHomeDashboard
                   title="Total Bookings"
                   value={s.totalBookings}
                   subtitle="All bookings"
@@ -488,7 +214,7 @@ export default function CustomerDashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <StatCard
+                <StatcardHomeDashboard
                   title="Completed Rentals"
                   value={s.completedRentals}
                   subtitle="Fulfilled"
@@ -500,7 +226,7 @@ export default function CustomerDashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
               >
-                <StatCard
+                <StatcardHomeDashboard
                   title="Total Spent"
                   value={formatPrice(s.totalSpent)}
                   subtitle="Paid out"
@@ -513,7 +239,7 @@ export default function CustomerDashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <StatCard
+                <StatcardHomeDashboard
                   title="Favorites"
                   value={s.favoritesCount}
                   subtitle="Saved equipment"

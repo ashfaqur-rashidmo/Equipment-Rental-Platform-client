@@ -21,6 +21,53 @@ export default function ProfilePage() {
   }));
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  // Upload the picked image to ImgBB and return the hosted URL.
+  const uploadImage = async (file: File): Promise<string> => {
+    const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
+
+    if (!apiKey) {
+      throw new Error("ImgBB API key is missing.");
+    }
+
+    const form = new FormData();
+    form.append("image", file);
+
+    const response = await fetch(
+      `https://api.imgbb.com/1/upload?key=${apiKey}`,
+      { method: "POST", body: form }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error?.message || "Image upload failed.");
+    }
+
+    return data.data.url;
+  };
+
+  // Pick a new profile image: upload it to ImgBB, then preview the hosted
+  // URL so it is included when the user saves.
+  const handleImageUpload = async (file: File) => {
+    try {
+      setUploading(true);
+
+      const uploadedUrl = await uploadImage(file);
+
+      setFormData((prev) => ({ ...prev, image: uploadedUrl }));
+      toast.success("Image uploaded successfully!");
+    } catch (error) {
+      console.error("Image upload error:", error);
+
+      toast.error(
+        error instanceof Error ? error.message : "Image upload failed."
+      );
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // Keep the form in sync with the session user when the session arrives
   // and the user is not mid-edit.
@@ -57,6 +104,7 @@ export default function ProfilePage() {
         name: formData.name.trim(),
         phone: formData.phone.trim(),
         address: formData.address.trim(),
+        image: formData.image || undefined,
       });
 
       if (error) {
@@ -131,14 +179,22 @@ export default function ProfilePage() {
                     type="file"
                     accept="image/*"
                     className="sr-only"
+                    disabled={uploading}
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) {
-                        setFormData({
-                          ...formData,
-                          image: URL.createObjectURL(file),
-                        });
+                      if (!file) return;
+
+                      if (file.type && !file.type.startsWith("image/")) {
+                        toast.error("Please select a valid image.");
+                        return;
                       }
+
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast.error("Image size must be less than 5MB.");
+                        return;
+                      }
+
+                      handleImageUpload(file);
                     }}
                   />
                   <div className="flex flex-col items-center justify-center gap-1">

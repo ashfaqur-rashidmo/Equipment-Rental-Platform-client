@@ -44,6 +44,7 @@ export interface EquipmentItem {
   rentalType?: string;
   rentalPrice: string | number;
   availableQuantity: number;
+  rating?: number;
   location: string;
   brand?: string;
   model?: string;

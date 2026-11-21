@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
-import { Users, Package, CalendarClock, Shield } from "lucide-react";
+import { motion } from "framer-motion";
+import { Users, Package, CalendarClock, Shield, HardHat } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import {
   BarChart,
@@ -147,6 +149,45 @@ export default function AdminDashboardPage() {
           ))}
         </div>
       </div>
+
+      {/* ===== Welcome banner (same card as the customer dashboard) ===== */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl bg-gradient-to-br from-[#e0f2fe] via-[#f0fdf4] to-[#ffffff] p-6 md:p-8 text-base-content relative overflow-hidden border border-blue-200 shadow-sm"
+      >
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="flex-1">
+            <h2 className="text-3xl font-extrabold tracking-tight text-base-content">
+              Welcome back,{" "}
+              <span className="text-[#2563eb]">{user?.name ?? "Admin"}</span>!
+            </h2>
+            <p className="mt-1 text-sm text-base-content/70">
+              Monitor users, equipment and rentals across the platform.
+            </p>
+            <Button
+              variant="default"
+              size="sm"
+              className="mt-4 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold shadow-lg"
+            >
+              Manage Dashboard
+            </Button>
+          </div>
+          <div className="hidden md:block md:w-[320px] rounded-xl overflow-hidden border border-blue-200/50 shadow-lg bg-white/40 backdrop-blur-sm">
+            <img
+              src="/images/equipment/hero.jpg"
+              alt="Equipment"
+              className="w-full h-48 object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center p-4">
+              <HardHat className="h-16 w-16 text-[#2563eb]/90 drop-shadow-lg" />
+            </div>
+          </div>
+        </div>
+      </motion.div>
 
       {user && (
         <div className="mb-4 flex items-center gap-2 text-sm text-base-content/70">

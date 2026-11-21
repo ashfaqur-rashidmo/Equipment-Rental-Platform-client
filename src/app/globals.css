@@ -60,9 +60,9 @@
   --color-primary: #f59e0b;
   --color-primary-content: #1c1917;
   --color-secondary: #14b8a6;
-  --color-secondary-content: #042f2e;
+  --color-secondary-content: #f0fdfa;
   --color-accent: #38bdf8;
-  --color-accent-content: #082f49;
+  --color-accent-content: #f0f7ff;
   --color-neutral: #334155;
   --color-neutral-content: #f8fafc;
 
@@ -72,13 +72,13 @@
   --color-base-content: #f1f5f9;
 
   --color-info: #38bdf8;
-  --color-info-content: #082f49;
+  --color-info-content: #f0f7ff;
   --color-success: #4ade80;
-  --color-success-content: #052e16;
+  --color-success-content: #ecfdf5;
   --color-warning: #fbbf24;
-  --color-warning-content: #451a03;
+  --color-warning-content: #fffbeb;
   --color-error: #f87171;
-  --color-error-content: #450a0a;
+  --color-error-content: #fef2f2;
 
   --radius-selector: 0.5rem;
   --radius-field: 0.625rem;
@@ -199,7 +199,11 @@ body {
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-.dark {
+/* Dark mode — the app manages dark mode via DaisyUI's `data-theme` attribute
+   (set by the root layout script and ThemeToggle), so the shadcn dark
+   variables below must follow `data-theme="dark"` instead of a `.dark`
+   class, which the app never puts on <html>. */
+[data-theme="dark"] {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);

@@ -151,40 +151,40 @@ export default function OwnerDashboardPage() {
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-        {/* ===== Welcome banner (dark brown per layout) ===== */}
+        {/* ===== Welcome banner (same card as the customer dashboard) ===== */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl bg-gradient-to-br from-[#3d2310] via-[#2d1b0e] to-[#1a0b05] p-6 md:p-8 text-white relative overflow-hidden border border-amber-900/40 shadow-2xl"
+          className="rounded-2xl bg-gradient-to-br from-[#e0f2fe] via-[#f0fdf4] to-[#ffffff] p-6 md:p-8 text-base-content relative overflow-hidden border border-blue-200 shadow-sm"
         >
           <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="flex-1">
-              <h2 className="text-3xl font-extrabold tracking-tight">
+              <h2 className="text-3xl font-extrabold tracking-tight text-base-content">
                 Welcome back,{" "}
-                <span className="text-[#f59e0b]">{user?.name ?? "Owner"}</span>!
+                <span className="text-[#2563eb]">{user?.name ?? "Owner"}</span>!
               </h2>
-              <p className="mt-1 text-sm text-amber-100/90">
-                Track your equipment, bookings and earnings in real time.
+              <p className="mt-1 text-sm text-base-content/70">
+                Track your equipment, bookings and earnings in one place.
               </p>
               <Button
                 variant="default"
                 size="sm"
-                className="mt-4 bg-[#f59e0b] hover:bg-[#eab308] text-[#1c1917] font-bold shadow-lg"
+                className="mt-4 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold shadow-lg"
               >
                 Explore Equipment
               </Button>
             </div>
-            <div className="md:w-[320px] rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-white/5 backdrop-blur-sm">
+            <div className="hidden md:block md:w-[320px] rounded-xl overflow-hidden border border-blue-200/50 shadow-lg bg-white/40 backdrop-blur-sm">
               <img
                 src="/images/equipment/hero.jpg"
                 alt="Equipment"
-                className="w-full h-48 md:h-auto object-cover"
+                className="w-full h-48 object-cover"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = "none";
                 }}
               />
               <div className="absolute inset-0 flex items-center justify-center p-4">
-                <HardHat className="h-16 w-16 text-[#f59e0b]/90 drop-shadow-lg" />
+                <HardHat className="h-16 w-16 text-[#2563eb]/90 drop-shadow-lg" />
               </div>
             </div>
           </div>

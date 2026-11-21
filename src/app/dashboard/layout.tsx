@@ -19,9 +19,9 @@ const layout = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="flex-1 min-h-svh">
       <DashboardSidebar />
-      <main>
+      <main className="min-w-0 flex-1">
         <SidebarTrigger />
         {children}
       </main>
