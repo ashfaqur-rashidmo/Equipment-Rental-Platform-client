@@ -1,16 +1,32 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { Users, Package, CalendarClock, Shield } from "lucide-react";
 import Link from "next/link";
+import {
+  BarChart,
+  Bar,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
-const stats = [
-  { label: "Total Users", value: "124", icon: Users, color: "text-primary" },
-  { label: "Equipment Listings", value: "56", icon: Package, color: "text-success" },
-  { label: "Pending Approvals", value: "8", icon: Shield, color: "text-warning" },
-  { label: "Total Rentals", value: "230", icon: CalendarClock, color: "text-base-content" },
-];
+import { EquipmentItem } from "@/data/equipment";
+import { Rental } from "@/lib/api/rentals";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+interface AdminStat {
+  label: string;
+  value: number;
+  icon: typeof Users;
+  color: string;
+  fill: string;
+}
 
 const quickActions = [
   { href: "/dashboard/admin/all-users", label: "Manage Users", icon: Users },
@@ -18,9 +34,97 @@ const quickActions = [
   { href: "/dashboard/admin/all-rentals", label: "Monitor Rentals", icon: CalendarClock },
 ];
 
+async function fetchJson<T>(url: string): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${url}`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch statistics.");
+  }
+
+  return response.json();
+}
+
 export default function AdminDashboardPage() {
   const { data: session } = useSession();
   const user = session?.user as { name?: string; role?: string } | undefined;
+
+  const [stats, setStats] = useState<AdminStat[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadStats = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const [users, equipment, rentals] = await Promise.all([
+        fetchJson<unknown[]>("/admin/users"),
+        fetchJson<EquipmentItem[]>("/admin/equipment"),
+        fetchJson<Rental[]>("/admin/rentals"),
+      ]);
+
+      const userList = Array.isArray(users) ? users : [];
+      const equipmentList = Array.isArray(equipment) ? equipment : [];
+      const rentalList = Array.isArray(rentals) ? rentals : [];
+
+      const pendingApprovals = equipmentList.filter(
+        (item) => String(item.status || "").toLowerCase() === "pending"
+      ).length;
+
+      setStats([
+        {
+          label: "Total Users",
+          value: userList.length,
+          icon: Users,
+          color: "text-primary",
+          fill: "var(--color-primary)",
+        },
+        {
+          label: "Equipment Listings",
+          value: equipmentList.length,
+          icon: Package,
+          color: "text-success",
+          fill: "var(--color-success)",
+        },
+        {
+          label: "Pending Approvals",
+          value: pendingApprovals,
+          icon: Shield,
+          color: "text-warning",
+          fill: "var(--color-warning)",
+        },
+        {
+          label: "Total Rentals",
+          value: rentalList.length,
+          icon: CalendarClock,
+          color: "text-base-content",
+          fill: "var(--color-base-content)",
+        },
+      ]);
+    } catch (err) {
+      console.error("Fetch stats error:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load statistics."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const chartData = stats.map((stat) => ({
+    label: stat.label,
+    value: stat.value,
+    fill: stat.fill,
+  }));
 
   return (
     <div className="mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-6">
@@ -53,25 +157,85 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
+      {/* Statistics loading */}
+      {loading && (
+        <div className="mb-6 flex items-center justify-center gap-2 rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
+          <span className="loading loading-spinner loading-md" />
+          <span className="text-sm text-base-content/60">Loading statistics...</span>
+        </div>
+      )}
+
+      {/* Statistics loading error */}
+      {!loading && error && (
+        <div className="mb-6 rounded-box border border-error bg-error/10 p-6 text-center">
+          <p className="text-sm text-error">{error}</p>
+        </div>
+      )}
+
       {/* Stats overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="rounded-box border border-base-300 bg-base-100 p-4 shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-base-content/60">{stat.label}</p>
-                <p className="text-xl font-bold text-base-content">{stat.value}</p>
-              </div>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-base-200 text-base-content/60">
-                <stat.icon className="h-5 w-5" />
+      {stats.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-box border border-base-300 bg-base-100 p-4 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-base-content/60">{stat.label}</p>
+                  <p className="text-xl font-bold text-base-content">
+                    {stat.value}
+                  </p>
+                </div>
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-base-200 text-base-content/60">
+                  <stat.icon className="h-5 w-5" />
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+
+      {/* Statistics chart */}
+      {!loading && stats.length > 0 && (
+        <div className="mb-6 rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-base-content/70">
+            Statistics
+          </h3>
+
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={chartData}>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="currentColor"
+                strokeOpacity={0.1}
+              />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11, fill: "currentColor" }}
+                stroke="transparent"
+              />
+              <YAxis tick={{ fontSize: 11, fill: "currentColor" }} stroke="transparent" />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "var(--color-base-100)",
+                  borderColor: "var(--color-base-300)",
+                  borderRadius: "0.5rem",
+                }}
+                labelStyle={{ color: "var(--color-base-content)" }}
+                formatter={(value) =>
+                  value == null ? "" : Number(value).toLocaleString("en-US")
+                }
+              />
+              <Bar dataKey="value" radius={4}>
+                {chartData.map((item) => (
+                  <Cell key={item.label} fill={item.fill} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* Recent activity placeholder */}
       <div className="rounded-box border border-base-300 bg-base-100 shadow-sm p-6">

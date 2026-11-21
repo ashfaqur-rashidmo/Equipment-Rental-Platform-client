@@ -1,3 +1,6 @@
+"use client";
+
+import { useLayoutEffect, useRef } from "react";
 import { Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
@@ -25,8 +28,31 @@ const socials = [
 ];
 
 export function Footer() {
+  const footerRef = useRef<HTMLElement>(null);
+
+  // Share the footer's measured height with the dashboard sidebar: the
+  // sidebar then stops right where the footer begins, so the footer
+  // connects with the sidebar's bottom corner instead of being overlapped.
+  useLayoutEffect(() => {
+    const el = footerRef.current;
+    if (!el) return;
+
+    const syncFooterHeight = () => {
+      document.documentElement.style.setProperty(
+        "--footer-height",
+        `${el.offsetHeight}px`
+      );
+    };
+
+    syncFooterHeight();
+    window.addEventListener("resize", syncFooterHeight);
+
+    return () =>
+      window.removeEventListener("resize", syncFooterHeight);
+  }, []);
+
   return (
-    <footer className="bg-neutral text-neutral-content">
+    <footer ref={footerRef} className="bg-neutral text-neutral-content">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}

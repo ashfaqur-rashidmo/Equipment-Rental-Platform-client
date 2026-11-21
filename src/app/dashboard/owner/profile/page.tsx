@@ -1,33 +1,40 @@
 "use client";
 
-import React, { useState } from "react";
-import { useSession } from "@/lib/auth-client";
+import React, { useEffect, useState } from "react";
+import { authClient, useSession } from "@/lib/auth-client";
 import Link from "next/link";
+import { toast } from "sonner";
 import { User, Mail, Phone, MapPin, Image as ImageIcon, Save, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { cn } from "cn";
 
-const initialProfile = {
-  name: "Rahim Khan",
-  email: "rahim@example.com",
-  phone: "+880 1700-000000",
-  address: "House 5, Road 3, Gulshan, Dhaka 1212, Bangladesh",
-  image: null as string | null,
-};
-
 export default function OwnerProfilePage() {
   const { data: session } = useSession();
   const user = session?.user;
-  const [formData, setFormData] = useState({
-    name: user?.name || initialProfile.name,
-    email: user?.email || initialProfile.email,
-    phone: initialProfile.phone,
-    address: initialProfile.address,
+  const [formData, setFormData] = useState(() => ({
+    name: user?.name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    address: user?.address || "",
     image: user?.image || null,
-  });
+  }));
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Keep the form in sync with the session user when the session arrives
+  // and the user is not mid-edit.
+  useEffect(() => {
+    if (!user || isEditing) return;
+
+    setFormData({
+      name: user.name || "",
+      email: user.email || "",
+      phone: user.phone || "",
+      address: user.address || "",
+      image: user.image || null,
+    });
+  }, [user, isEditing]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -37,20 +44,39 @@ export default function OwnerProfilePage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.name.trim()) {
+      toast.error("Name is required.");
+      return;
+    }
+
     setIsSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsSaving(false);
-    setIsEditing(false);
+
+    try {
+      const { error } = await authClient.updateUser({
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
+        address: formData.address.trim(),
+      });
+
+      if (error) {
+        throw new Error(error.message || "Failed to update profile.");
+      }
+
+      toast.success("Profile updated successfully.");
+      setIsEditing(false);
+    } catch (err) {
+      console.error("Update profile error:", err);
+
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update profile."
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
-    setFormData({
-      name: user?.name || initialProfile.name,
-      email: user?.email || initialProfile.email,
-      phone: initialProfile.phone,
-      address: initialProfile.address,
-      image: user?.image || null,
-    });
     setIsEditing(false);
   };
 
@@ -164,7 +190,7 @@ export default function OwnerProfilePage() {
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
-                    disabled={!isEditing}
+                    disabled
                     className="input-bordered"
                     placeholder="you@example.com"
                   />
