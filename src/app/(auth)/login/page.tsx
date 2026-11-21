@@ -76,6 +76,27 @@ const HandleSignIn = async (
 };
 
 
+const handleGoogleSignIn = async () => {
+  try {
+    setIsLoading(true);
+
+    const { data, error } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL: redirectTo || "/dashboard/customer",
+    });
+
+    if (error) {
+      toast.error(error.message || "Google login failed.");
+      return;
+    }
+  } catch (error) {
+    console.error("Google login error:", error);
+    toast.error("Something went wrong with Google login. Please try again.");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -142,7 +163,7 @@ const HandleSignIn = async (
           <span className="h-px flex-1 bg-base-300" />
         </div>
 
-        <button type="button" className="btn btn-outline btn-block gap-2">
+        <button type="submit" onClick={handleGoogleSignIn} className="btn btn-outline btn-block gap-2">
           <GoogleLogo className="h-5 w-5" />
           Continue with Google
         </button>

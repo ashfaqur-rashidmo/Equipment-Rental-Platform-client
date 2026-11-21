@@ -24,6 +24,7 @@ export const DASHBOARD_ROUTES: Record<UserRole, DashboardRoute> = {
     path: "/dashboard/customer",
     label: "My Rentals",
     subRoutes: [
+      {path: "/dashboard/customer", label: "Overview"},
       { path: "/dashboard/customer/my-rentals", label: "My Rentals" },
       { path: "/dashboard/customer/favorites", label: "Favorites" },
       { path: "/dashboard/customer/profile", label: "Profile" },
@@ -33,6 +34,7 @@ export const DASHBOARD_ROUTES: Record<UserRole, DashboardRoute> = {
     path: "/dashboard/owner",
     label: "My Equipment",
     subRoutes: [
+      {path: "/dashboard/owner", label: "Overview"},
       { path: "/dashboard/owner/add-equipment", label: "Add Equipment" },
       { path: "/dashboard/owner/my-equipment", label: "My Equipment" },
       { path: "/dashboard/owner/my-equipment-rental", label: "My Equipment Rental" },
@@ -43,9 +45,10 @@ export const DASHBOARD_ROUTES: Record<UserRole, DashboardRoute> = {
     path: "/dashboard/admin",
     label: "Dashboard",
     subRoutes: [
-      { path: "/dashboard/admin/users", label: "All Users" },
-      { path: "/dashboard/admin/equipment", label: "All Equipment" },
-      { path: "/dashboard/admin/rentals", label: "All Rentals" },
+      {path: "/dashboard/admin", label: "Overview"},
+      { path: "/dashboard/admin/all-users", label: "All Users" },
+      { path: "/dashboard/admin/all-equipment", label: "All Equipment" },
+      { path: "/dashboard/admin/all-rentals", label: "All Rentals" },
       { path: "/dashboard/admin/profile", label: "My Profile" },
     ],
   },

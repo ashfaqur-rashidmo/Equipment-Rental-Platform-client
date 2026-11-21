@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 
 
-type SignUpRole = "Customer" | "Owner";
+type SignUpRole = "Customer" | "Owner" | "Admin";
 
 const passwordRules = [
   "At least 6 characters",
@@ -344,6 +344,7 @@ export default function RegisterPage() {
   >
     <option value="Customer">Customer - Rent equipment</option>
     <option value="Owner">Equipment Owner - Rent out equipment</option>
+    <option value="Admin">Admin - Manage platform</option>
   </select>
 </div>
 

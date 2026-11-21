@@ -1,4 +1,4 @@
-import { betterAuth } from "better-auth";
+import { betterAuth, string } from "better-auth";
 import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 
@@ -29,8 +29,9 @@ export const auth = betterAuth({
   socialProviders: {
     google: {
       enabled: true,
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      clientId: process.env.BETTER_AUTH_GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.BETTER_AUTH_GOOGLE_CLIENT_SECRET as string,
     },
   },
+
 });
