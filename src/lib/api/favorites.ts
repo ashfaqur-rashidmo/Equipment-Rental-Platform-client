@@ -21,10 +21,18 @@ export interface Favorite {
 }
 
 /** Every equipment a customer saved, newest first. */
-export const GetMyFavorites = async (userId: string): Promise<Favorite[]> => {
+export const GetMyFavorites = async (
+  userId: string,
+  token?: string
+): Promise<Favorite[]> => {
   const response = await fetch(
     `${API_BASE_URL}/favorites?userId=${encodeURIComponent(userId)}`,
-    { cache: "no-store" }
+    {
+      cache: "no-store",
+      headers: token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined,
+    }
   );
 
   if (!response.ok) throw new Error("Failed to fetch favorites.");
@@ -36,13 +44,19 @@ export const GetMyFavorites = async (userId: string): Promise<Favorite[]> => {
 /** The saved row for one equipment (null when it is not saved). */
 export const GetFavorite = async (
   userId: string,
-  equipmentId: string
+  equipmentId: string,
+  token?: string
 ): Promise<Favorite | null> => {
   const response = await fetch(
     `${API_BASE_URL}/favorites?userId=${encodeURIComponent(
       userId
     )}&equipmentId=${encodeURIComponent(equipmentId)}`,
-    { cache: "no-store" }
+    {
+      cache: "no-store",
+      headers: token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined,
+    }
   );
 
   if (!response.ok) return null;
@@ -54,11 +68,15 @@ export const GetFavorite = async (
 /** Save an equipment to the customer's favorites. */
 export const AddFavorite = async (
   userId: string,
-  equipmentId: string
+  equipmentId: string,
+  token?: string
 ): Promise<Favorite> => {
   const response = await fetch(`${API_BASE_URL}/favorites`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({ userId, equipmentId }),
   });
 
@@ -72,10 +90,18 @@ export const AddFavorite = async (
 };
 
 /** Remove a saved item by its favorite id. */
-export const RemoveFavorite = async (favoriteId: string): Promise<void> => {
+export const RemoveFavorite = async (
+  favoriteId: string,
+  token?: string
+): Promise<void> => {
   const response = await fetch(
     `${API_BASE_URL}/favorites/${encodeURIComponent(favoriteId)}`,
-    { method: "DELETE" }
+    {
+      method: "DELETE",
+      headers: token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined,
+    }
   );
 
   if (!response.ok) throw new Error("Failed to remove favorite.");

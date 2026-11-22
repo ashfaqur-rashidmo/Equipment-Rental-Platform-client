@@ -52,7 +52,7 @@ export default function PaymentPage({searchParams}: {searchParams: {id: string}}
     let cancelled = false;
     const key = `${userId}:${rentalId}`;
 
-    GetRentalById(rentalId)
+    GetRentalById(rentalId, session?.session?.token)
       .then((rental) => {
         if (!cancelled) setState({ key, rental });
       })

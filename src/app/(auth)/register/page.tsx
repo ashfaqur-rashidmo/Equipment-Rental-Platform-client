@@ -181,7 +181,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const { data, error } = await authClient.signUp.email({
+      const { error } = await authClient.signUp.email({
         name,
         email,
         password,
@@ -193,8 +193,6 @@ export default function RegisterPage() {
         toast.error(error.message || "Registration failed.");
         return;
       }
-
-      console.log("Registration successful:", data);
 
       toast.success("Account created successfully!");
 
@@ -231,7 +229,7 @@ export default function RegisterPage() {
         <div className="relative flex h-full flex-col justify-between p-10 text-neutral-content">
           <div>
             <p className="text-sm font-semibold uppercase tracking-widest text-primary">
-              Join Gearora
+              Join EquipRent
             </p>
 
             <h2 className="mt-3 text-3xl font-bold leading-snug">
@@ -280,7 +278,7 @@ export default function RegisterPage() {
           </h1>
 
           <p className="mt-2 text-sm text-base-content/60">
-            Join Gearora and get the equipment you need for your projects.
+            Join EquipRent and get the equipment you need for your projects.
           </p>
 
           <form className="mt-8 space-y-4" onSubmit={handleSubmit}>

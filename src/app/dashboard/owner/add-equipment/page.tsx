@@ -11,17 +11,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import CategorySelect from "@/app/component/ownerEquipments/CategorySelect";
 
-const categories = [
-  "Construction",
-  "Photography",
-  "Agriculture",
-  "Events",
-  "Tools",
-  "Vehicles",
-  "Electronics",
-  "Other",
-];
-
 const rentalTypes = ["Daily", "Weekly", "Monthly"];
 const conditions = ["New", "Like New", "Good", "Fair", "Poor"];
 
@@ -265,6 +254,9 @@ export default function AddEquipmentPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(session?.session?.token
+            ? { Authorization: `Bearer ${session.session.token}` }
+            : {}),
         },
         body: JSON.stringify(equipmentData),
       });

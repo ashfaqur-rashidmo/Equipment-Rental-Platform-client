@@ -35,7 +35,7 @@ const AddFavoriteButton = ({ equipmentId }: AddFavoriteButtonProps) => {
 
     let cancelled = false;
 
-    GetFavorite(userId, equipmentId)
+    GetFavorite(userId, equipmentId, session?.session?.token)
       .then((row) => {
         if (!cancelled) setFavorite(row);
       })
@@ -46,7 +46,7 @@ const AddFavoriteButton = ({ equipmentId }: AddFavoriteButtonProps) => {
     return () => {
       cancelled = true;
     };
-  }, [userId, equipmentId]);
+  }, [userId, equipmentId, session?.session?.token]);
 
   const isSaved = Boolean(favorite);
 
@@ -61,11 +61,15 @@ const AddFavoriteButton = ({ equipmentId }: AddFavoriteButtonProps) => {
 
     try {
       if (favorite) {
-        await RemoveFavorite(favorite._id);
+        await RemoveFavorite(favorite._id, session?.session?.token);
         setFavorite(null);
         toast.success("Removed from favorites");
       } else {
-        const created = await AddFavorite(userId, equipmentId);
+        const created = await AddFavorite(
+          userId,
+          equipmentId,
+          session?.session?.token
+        );
         setFavorite(created);
         toast.success("Added to favorites");
       }

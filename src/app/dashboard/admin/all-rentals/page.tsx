@@ -1,14 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Package,
-  DollarSign,
-  Pencil,
-  Save,
-  RefreshCw,
-} from "lucide-react";
-import { toast } from "sonner";
+import { Package, RefreshCw } from "lucide-react";
+import Pagination from "@/components/ui/pagination";
+
+const PAGE_SIZE = 10;
+import { useSession } from "@/lib/auth-client";
 
 import { EquipmentItem, formatPrice } from "@/data/equipment";
 import { Rental } from "@/lib/api/rentals";
@@ -21,15 +18,6 @@ type EquipmentMap = Record<string, EquipmentItem>;
 type UserEntry = { _id?: string; id?: string; name?: string; email?: string };
 
 type UsersMap = Record<string, { name?: string; email?: string }>;
-
-type ManageForm = {
-  paymentStatus: string;
-  bookingStatus: string;
-};
-
-const PAYMENT_STATUSES = ["Pending", "Paid"] as const;
-
-const BOOKING_STATUSES = ["Pending", "Confirmed", "Cancelled"] as const;
 
 const formatDate = (date?: string) => {
   if (!date) return "N/A";
@@ -63,19 +51,17 @@ const durationLabel = (rental: Rental) => {
 };
 
 export default function AllRentalsPage() {
+  const { data: session } = useSession();
+  const token = session?.session?.token;
+
+  const [page, setPage] = useState(1);
   const [rentals, setRentals] = useState<Rental[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [busyKey, setBusyKey] = useState("");
 
   // Lookup data used to resolve the owner of each equipment listing.
   const [equipmentMap, setEquipmentMap] = useState<EquipmentMap>({});
   const [usersMap, setUsersMap] = useState<UsersMap>({});
-
-  // Per-row "manage" form: keyed by rental id.
-  const [pending, setPending] = useState<Record<string, ManageForm>>({});
-
-  const isBusy = (key: string) => busyKey === key;
 
   // Fetch all rentals from the admin endpoint.
   const fetchRentals = async () => {
@@ -91,6 +77,9 @@ export default function AllRentalsPage() {
 
       const response = await fetch(`${API_BASE_URL}/admin/rentals`, {
         cache: "no-store",
+        headers: session?.session?.token
+          ? { Authorization: `Bearer ${session.session.token}` }
+          : undefined,
       });
 
       if (!response.ok) {
@@ -121,7 +110,12 @@ export default function AllRentalsPage() {
 
     try {
       const [equipmentRes, usersRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/admin/equipment`, { cache: "no-store" }),
+        fetch(`${API_BASE_URL}/admin/equipment`, {
+          cache: "no-store",
+          headers: session?.session?.token
+            ? { Authorization: `Bearer ${session.session.token}` }
+            : undefined,
+        }),
         fetch(`${API_BASE_URL}/users`, { cache: "no-store" }),
       ]);
 
@@ -158,9 +152,15 @@ export default function AllRentalsPage() {
   };
 
   useEffect(() => {
-    fetchRentals();
-    fetchSupportData();
-  }, []);
+    // Wait for the session/token before fetching — the fetches need
+    // authorization, so firing immediately would 401 every time.
+    if (token) {
+      void (async () => {
+        await fetchRentals();
+        await fetchSupportData();
+      })();
+    }
+  }, [token]);
 
   const rentalId = (rental: Rental) => String(rental._id);
 
@@ -176,88 +176,15 @@ export default function AllRentalsPage() {
     };
   };
 
-  const setManaging = (rental: Rental) => {
-    setPending((prev) => ({
-      ...prev,
-      [rentalId(rental)]: {
-        paymentStatus: rental.paymentStatus || "Pending",
-        bookingStatus: rental.bookingStatus || "Pending",
-      },
-    }));
-  };
-
-  const setPendingStatus = (
-    rental: Rental,
-    field: keyof ManageForm,
-    value: string
-  ) => {
-    const id = rentalId(rental);
-
-    setPending((prev) => {
-      const current =
-        prev[id] || {
-          paymentStatus: rental.paymentStatus || "Pending",
-          bookingStatus: rental.bookingStatus || "Pending",
-        };
-
-      return {
-        ...prev,
-        [id]: { ...current, [field]: value },
-      };
-    });
-  };
-
-  // Save the edited payment/booking status for a rental.
-  const saveManage = async (rental: Rental) => {
-    const id = rentalId(rental);
-    const changes = pending[id];
-
-    if (!changes) return;
-
-    setBusyKey(`manage:${id}`);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/rentals/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          paymentStatus: changes.paymentStatus,
-          bookingStatus: changes.bookingStatus,
-        }),
-      });
-
-      const result = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(
-          result?.error || "Failed to update rental booking."
-        );
-      }
-
-      toast.success("Rental booking updated.");
-
-      setPending((prev) => {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
-
-      fetchRentals();
-    } catch (err) {
-      console.error("Manage rental error:", err);
-
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Failed to update rental booking."
-      );
-    } finally {
-      setBusyKey("");
-    }
-  };
-
   const sortedRentals = [...rentals].sort((a, b) =>
     (b.bookingDate || "").localeCompare(a.bookingDate || "")
+  );
+
+  const totalPages = Math.max(1, Math.ceil(sortedRentals.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const pageRentals = sortedRentals.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE
   );
 
   return (
@@ -380,14 +307,12 @@ export default function AllRentalsPage() {
                   <th>Booking Amount</th>
                   <th>Payment Status</th>
                   <th>Booking Status</th>
-                  <th className="text-center">Actions</th>
                 </tr>
               </thead>
 
               <tbody>
-                {sortedRentals.map((rental) => {
+                {pageRentals.map((rental) => {
                   const id = rentalId(rental);
-                  const managing = Boolean(pending[id]);
                   const owner = getOwner(rental);
 
                   return (
@@ -444,79 +369,13 @@ export default function AllRentalsPage() {
                       <td>
                         <StatusBadge status={rental.bookingStatus} />
                       </td>
-
-                      {/* Actions */}
-                      <td>
-                        {managing ? (
-                          <div className="flex items-center justify-center gap-1">
-                            <select
-                              className="select select-bordered select-sm min-w-26"
-                              value={pending[id]?.paymentStatus ?? ""}
-                              onChange={(e) =>
-                                setPendingStatus(
-                                  rental,
-                                  "paymentStatus",
-                                  e.target.value
-                                )
-                              }
-                            >
-                              {PAYMENT_STATUSES.map((status) => (
-                                <option key={status} value={status}>
-                                  {status}
-                                </option>
-                              ))}
-                            </select>
-
-                            <select
-                              className="select select-bordered select-sm min-w-26"
-                              value={pending[id]?.bookingStatus ?? ""}
-                              onChange={(e) =>
-                                setPendingStatus(
-                                  rental,
-                                  "bookingStatus",
-                                  e.target.value
-                                )
-                              }
-                            >
-                              {BOOKING_STATUSES.map((status) => (
-                                <option key={status} value={status}>
-                                  {status}
-                                </option>
-                              ))}
-                            </select>
-
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-primary"
-                              onClick={() => saveManage(rental)}
-                              disabled={isBusy(`manage:${id}`)}
-                            >
-                              {isBusy(`manage:${id}`) ? (
-                                <span className="loading loading-spinner loading-xs" />
-                              ) : (
-                                <Save className="h-4 w-4" />
-                              )}
-                              Save
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-ghost"
-                            onClick={() => setManaging(rental)}
-                            title="Manage booking"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                        )}
-                      </td>
                     </tr>
                   );
                 })}
 
                 {sortedRentals.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center">
+                    <td colSpan={7} className="py-12 text-center">
                       <Package className="mx-auto h-10 w-10 text-base-content/30" />
 
                       <p className="mt-3 font-medium text-base-content">
@@ -535,11 +394,19 @@ export default function AllRentalsPage() {
 
           <div className="border-t border-base-300 px-5 py-3">
             <p className="text-xs text-base-content/50">
-              Showing {sortedRentals.length} of {rentals.length} rentals
+              Showing {pageRentals.length} of {rentals.length} rentals
             </p>
           </div>
         </div>
       )}
+
+      <Pagination
+        total={sortedRentals.length}
+        pageSize={PAGE_SIZE}
+        page={safePage}
+        onPageChange={setPage}
+        className="mt-4"
+      />
     </div>
   );
 }

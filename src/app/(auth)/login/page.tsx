@@ -11,7 +11,12 @@ import { toast } from "sonner";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") ?? "/";
+  const rawRedirect = searchParams.get("redirectTo");
+  const isSafeRedirect =
+    rawRedirect !== null &&
+    rawRedirect.startsWith("/") &&
+    !rawRedirect.startsWith("//");
+  const redirectTo = isSafeRedirect && rawRedirect ? rawRedirect : "/";
   const [isLoading, setIsLoading] = useState(false)
 
   
@@ -53,7 +58,7 @@ const HandleSignIn = async (
 
     // Go back to where the login started (e.g. the booking form),
     // otherwise land on the role's dashboard.
-    if (redirectTo && redirectTo !== "/") {
+    if (isSafeRedirect && redirectTo !== "/") {
       router.push(redirectTo);
       return;
     }
@@ -80,9 +85,9 @@ const handleGoogleSignIn = async () => {
   try {
     setIsLoading(true);
 
-    const { data, error } = await authClient.signIn.social({
+    const { error } = await authClient.signIn.social({
       provider: "google",
-      callbackURL: redirectTo || "/dashboard/customer",
+      callbackURL: isSafeRedirect ? redirectTo : "/dashboard/customer",
     });
 
     if (error) {
@@ -111,7 +116,7 @@ const handleGoogleSignIn = async () => {
         Login to book equipment, manage rentals and your dashboard.
       </p>
 
-      {/* UI only — no auth logic wired yet */}
+      {/* Email + password login */}
       <form className="mt-8 space-y-4" onSubmit={HandleSignIn}>
         <div>
           <label htmlFor="login-email" className="label pb-1">
@@ -163,7 +168,11 @@ const handleGoogleSignIn = async () => {
           <span className="h-px flex-1 bg-base-300" />
         </div>
 
-        <button type="submit" onClick={handleGoogleSignIn} className="btn btn-outline btn-block gap-2">
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          className="btn btn-outline btn-block gap-2"
+        >
           <GoogleLogo className="h-5 w-5" />
           Continue with Google
         </button>

@@ -69,7 +69,9 @@ export function FeaturedEquipment() {
   };
 
   useEffect(() => {
-    fetchEquipment();
+    void (async () => {
+      await fetchEquipment();
+    })();
   }, []);
 
   return (

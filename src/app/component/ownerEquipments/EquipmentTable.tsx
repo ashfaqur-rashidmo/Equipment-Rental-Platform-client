@@ -96,7 +96,7 @@ export default function EquipmentTable({
                   </h3>
 
                   <p className="mt-1 text-sm text-base-content/50">
-                    You haven't added any equipment yet.
+                    You have not added any equipment yet.
                   </p>
 
                   <Link

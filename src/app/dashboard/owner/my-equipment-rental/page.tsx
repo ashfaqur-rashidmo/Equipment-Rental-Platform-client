@@ -10,11 +10,16 @@ import StateCard from "@/app/component/Dashboard/StateCard";
 import OwnerRentalsTable, {
   NoRentalsYet,
 } from "@/app/component/OwnerDashboard/OwnerRentalsTable";
+import Pagination from "@/components/ui/pagination";
+
+const PAGE_SIZE = 10;
 
 export default function OwnerRentalsPage() {
   const { data: session, isPending } = useSession();
   const user = session?.user;
   const ownerId = user?.id;
+
+  const [page, setPage] = useState(1);
 
   const [state, setState] = useState<{
     ownerId: string;
@@ -28,7 +33,7 @@ export default function OwnerRentalsPage() {
 
     let cancelled = false;
 
-    GetOwnerRentals(ownerId)
+    GetOwnerRentals(ownerId, session?.session?.token)
       .then((rows) => {
         if (!cancelled) setState({ ownerId, rentals: rows });
       })
@@ -46,6 +51,14 @@ export default function OwnerRentalsPage() {
   const rentals = current?.rentals ?? [];
   const error = current?.error ?? null;
   const showLoader = isPending || (Boolean(ownerId) && !current);
+
+  // Newest-first lists from the API — slice one page at a time.
+  const totalPages = Math.max(1, Math.ceil(rentals.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const pageRentals = rentals.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE
+  );
 
   const hasRows = !showLoader && !error && rentals.length > 0;
 
@@ -111,7 +124,17 @@ export default function OwnerRentalsPage() {
       {!showLoader && !error && rentals.length === 0 && <NoRentalsYet />}
 
       {/* Bookings table */}
-      {hasRows && <OwnerRentalsTable rentals={rentals} />}
+      {hasRows && <OwnerRentalsTable rentals={pageRentals} />}
+
+      {hasRows && (
+        <Pagination
+          total={rentals.length}
+          pageSize={PAGE_SIZE}
+          page={safePage}
+          onPageChange={setPage}
+          className="mt-6"
+        />
+      )}
     </div>
   );
 }

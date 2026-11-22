@@ -12,7 +12,10 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
+import Pagination from "@/components/ui/pagination";
 import { formatDate } from "@/lib/utils";
+
+const PAGE_SIZE = 10;
 import DashboardHeader from "@/app/component/Dashboard/DashboardHeader";
 import StateCard from "@/app/component/Dashboard/StateCard";
 import {
@@ -24,6 +27,8 @@ export default function CustomerRentalsPage() {
   const { data: session, isPending } = useSession();
   const user = session?.user;
   const userId = user?.id;
+
+  const [page, setPage] = useState(1);
 
   const [state, setState] = useState<{
     userId: string;
@@ -37,7 +42,7 @@ export default function CustomerRentalsPage() {
 
     let cancelled = false;
 
-    GetMyRentals(userId)
+    GetMyRentals(userId, session?.session?.token)
       .then((rows) => {
         if (!cancelled) setState({ userId, rentals: rows });
       })
@@ -55,6 +60,13 @@ export default function CustomerRentalsPage() {
   const rentals = current?.rentals ?? [];
   const error = current?.error ?? null;
   const showLoader = isPending || (Boolean(userId) && !current);
+
+  const totalPages = Math.max(1, Math.ceil(rentals.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const pageRentals = rentals.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE
+  );
 
   const hasRows = !showLoader && !error && rentals.length > 0;
 
@@ -147,7 +159,7 @@ export default function CustomerRentalsPage() {
                 </tr>
               </thead>
               <tbody>
-                {rentals.map((rental) => (
+                {pageRentals.map((rental) => (
                   <tr key={rental._id}>
                     <td className="font-medium">
                       <Link
@@ -206,6 +218,16 @@ export default function CustomerRentalsPage() {
             {rentals.length} booking{rentals.length !== 1 ? "s" : ""} on file
           </div>
         </div>
+      )}
+
+      {hasRows && (
+        <Pagination
+          total={rentals.length}
+          pageSize={PAGE_SIZE}
+          page={safePage}
+          onPageChange={setPage}
+          className="mt-6"
+        />
       )}
     </div>
   );

@@ -12,6 +12,9 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
+import Pagination from "@/components/ui/pagination";
+
+const PAGE_SIZE = 10;
 
 interface AdminUser {
   _id: string;
@@ -26,6 +29,7 @@ const roles = ["Customer", "Owner", "Admin"];
 export default function AllUsersPage() {
   const { data: session, isPending } = useSession();
   const currentUser = session?.user;
+  const [page, setPage] = useState(1);
 
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +54,9 @@ export default function AllUsersPage() {
 
       const response = await fetch(`${API_BASE_URL}/admin/users`, {
         cache: "no-store",
+        headers: session?.session?.token
+          ? { Authorization: `Bearer ${session.session.token}` }
+          : undefined,
       });
 
       if (!response.ok) {
@@ -75,15 +82,17 @@ export default function AllUsersPage() {
   };
 
   useEffect(() => {
-    if (isPending) return;
+    void (async () => {
+      if (isPending) return;
 
-    if (!currentUser) {
-      setLoading(false);
-      setError("Please log in to access this page.");
-      return;
-    }
+      if (!currentUser) {
+        setLoading(false);
+        setError("Please log in to access this page.");
+        return;
+      }
 
-    fetchUsers();
+      await fetchUsers();
+    })();
   }, [isPending, currentUser?.id]);
 
   // Change a user's role in local state
@@ -123,6 +132,9 @@ export default function AllUsersPage() {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
+            ...(session?.session?.token
+              ? { Authorization: `Bearer ${session.session.token}` }
+              : {}),
           },
           body: JSON.stringify({ role: user.role }),
         }
@@ -176,6 +188,9 @@ export default function AllUsersPage() {
         `${API_BASE_URL}/admin/users/${user._id}`,
         {
           method: "DELETE",
+          headers: session?.session?.token
+            ? { Authorization: `Bearer ${session.session.token}` }
+            : undefined,
         }
       );
 
@@ -208,6 +223,16 @@ export default function AllUsersPage() {
       user.role?.toLowerCase().includes(searchValue)
     );
   });
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredUsers.length / PAGE_SIZE)
+  );
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const pageUsers = filteredUsers.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE
+  );
 
   const formatDate = (date: string) => {
     if (!date) return "N/A";
@@ -346,7 +371,7 @@ export default function AllUsersPage() {
               </thead>
 
               <tbody>
-                {filteredUsers.map((user) => (
+                {pageUsers.map((user) => (
                   <tr key={user._id} className="hover:bg-base-200/40">
                     {/* Name */}
                     <td>
@@ -458,11 +483,19 @@ export default function AllUsersPage() {
 
           <div className="border-t border-base-300 px-5 py-3">
             <p className="text-xs text-base-content/50">
-              Showing {filteredUsers.length} of {users.length} users
+              Showing {pageUsers.length} of {filteredUsers.length} users
             </p>
           </div>
         </div>
       )}
+
+      <Pagination
+        total={filteredUsers.length}
+        pageSize={PAGE_SIZE}
+        page={safePage}
+        onPageChange={setPage}
+        className="mt-4"
+      />
     </div>
   );
 }

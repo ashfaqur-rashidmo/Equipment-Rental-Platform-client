@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SearchX, SlidersHorizontal } from "lucide-react";
 import { EquipmentItem } from "@/data/equipment";
 import { EquipmentCategory } from "@/lib/api/getEquipmentCategories";
@@ -13,6 +13,9 @@ import EquipmentFilters, {
   countActiveFilters,
 } from "@/app/component/PublicEquipment/EquipmentFilters";
 import ActiveFilterChips from "@/app/component/PublicEquipment/ActiveFilterChips";
+import Pagination from "@/components/ui/pagination";
+
+const PAGE_SIZE = 10;
 
 interface AllEquipmentClientProps {
   equipments: EquipmentItem[];
@@ -26,8 +29,30 @@ const AllEquipmentClient = ({
   categories,
 }: AllEquipmentClientProps) => {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const activeCount = countActiveFilters(searchParams);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sort, setSort] = useState(searchParams.get("sort") || "recent");
+
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setSort(value);
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === "recent") params.delete("sort");
+    else params.set("sort", value);
+
+    router.push(`${pathname}?${params.toString()}`);
+  };
+  const [page, setPage] = useState(1);
+
+  const totalPages = Math.max(1, Math.ceil(equipments.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const pageItems = equipments.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE
+  );
 
   return (
     <main className="min-h-screen bg-base-200">
@@ -89,9 +114,31 @@ const AllEquipmentClient = ({
 
           {/* Results column */}
           <section className="min-w-0">
-            {/* Toolbar: active filter chips + result count */}
+            {/* Toolbar: sort select + active filter chips + result count */}
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-              <ActiveFilterChips />
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="equipment-sort"
+                    className="text-xs font-medium text-base-content/50"
+                  >
+                    Sort by
+                  </label>
+                  <select
+                    id="equipment-sort"
+                    value={sort}
+                    onChange={handleSortChange}
+                    className="select select-bordered select-sm"
+                    aria-label="Sort equipment"
+                  >
+                    <option value="recent">Recently Added</option>
+                    <option value="priceLow">Price: Low to High</option>
+                    <option value="priceHigh">Price: High to Low</option>
+                  </select>
+                </div>
+
+                <ActiveFilterChips />
+              </div>
 
               <p className="ml-auto text-sm text-base-content/60">
                 {equipments.length} equipment
@@ -122,8 +169,16 @@ const AllEquipmentClient = ({
 
             {/* Equipment Grid */}
             {equipments.length > 0 && (
-              <EquipmentGrid equipments={equipments} />
+              <EquipmentGrid equipments={pageItems} />
             )}
+
+            <Pagination
+              total={equipments.length}
+              pageSize={PAGE_SIZE}
+              page={safePage}
+              onPageChange={setPage}
+              className="mt-8"
+            />
           </section>
         </div>
 

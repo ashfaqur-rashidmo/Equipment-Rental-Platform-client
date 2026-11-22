@@ -39,12 +39,15 @@ export function EquipmentCard({ equipment, priority = false }: EquipmentCardProp
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl">
       <figure className="relative aspect-[4/3] overflow-hidden">
         <Image
-          src={equipment.image || ""}
+          src={equipment.image || "/images/equipment/hero.jpg"}
           alt={equipment.name}
           fill
           priority={priority}
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover transition-transform duration-500 group-hover:scale-105"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "/images/equipment/hero.jpg";
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
         <span className="badge badge-primary badge-sm absolute left-3 top-3 border-none font-semibold">

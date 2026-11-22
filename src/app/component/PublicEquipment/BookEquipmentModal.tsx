@@ -13,6 +13,8 @@ interface BookEquipmentModalProps {
   equipmentName: string;
   rentalPrice: number;
   rentalType?: string;
+  /** Units currently available to rent — bookings cannot exceed this. */
+  availableQuantity?: number;
 }
 
 interface BookingForm {
@@ -41,6 +43,7 @@ const BookEquipmentModal = ({
   equipmentName,
   rentalPrice,
   rentalType,
+  availableQuantity,
 }: BookEquipmentModalProps) => {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<BookingForm>(initialForm);
@@ -93,23 +96,33 @@ const BookEquipmentModal = ({
     return;
   }
 
+   if (availableQuantity !== undefined && quantity > availableQuantity) {
+    toast.error(
+      `Only ${availableQuantity} unit${availableQuantity !== 1 ? "s" : ""} available to rent.`
+    );
+    return;
+  }
+
     setSubmitting(true);
 
     try {
-      const booking = await ApplyForRental({
-        equipmentId,
-        equipmentName,
-        customerId: user.id,
-        customerName: user.name,
-        startDate: form.startDate,
-        endDate: form.endDate,
-        quantity: Number(form.quantity) || 1,
-        rentalPrice,
-        rentalType,
-        contactNumber: form.contactNumber,
-        deliveryAddress: form.deliveryAddress,
-        notes: form.notes,
-      });
+      const booking = await ApplyForRental(
+        {
+          equipmentId,
+          equipmentName,
+          customerId: user.id,
+          customerName: user.name,
+          startDate: form.startDate,
+          endDate: form.endDate,
+          quantity: Number(form.quantity) || 1,
+          rentalPrice,
+          rentalType,
+          contactNumber: form.contactNumber,
+          deliveryAddress: form.deliveryAddress,
+          notes: form.notes,
+        },
+        session?.session?.token
+      );
 
       toast.success("Booking created! Complete your payment.");
       closeModal();
@@ -140,9 +153,12 @@ const BookEquipmentModal = ({
 
   let duration = days;
 
-  if (rentalType === "weekly") {
+  // The API stores capitalized values ("Daily"/"Weekly"/"Monthly"), but
+  // tolerate any casing so the estimate always matches the server math.
+  const rentalTypeValue = (rentalType || "").toLowerCase();
+  if (rentalTypeValue === "weekly") {
     duration = Math.ceil(days / 7);
-  } else if (rentalType === "monthly") {
+  } else if (rentalTypeValue === "monthly") {
     duration = Math.ceil(days / 30);
   }
 
@@ -229,6 +245,7 @@ const BookEquipmentModal = ({
                     name="quantity"
                     type="number"
                     min={1}
+                    max={availableQuantity}
                     value={form.quantity}
                     onChange={handleChange}
                     required

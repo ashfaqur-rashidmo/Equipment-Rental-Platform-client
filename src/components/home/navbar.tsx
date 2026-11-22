@@ -1,6 +1,7 @@
 "use client";
 
-import { signOut, useSession } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
+import { useLogOut } from "@/lib/logout";
 import { siteConfig, DASHBOARD_ROUTES, UserRole } from "@/config/site";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
@@ -39,6 +40,7 @@ export function Navbar() {
   const pathname = usePathname();
   const { data: session, isPending } = useSession();
   const user = session?.user;
+  const logout = useLogOut();
 
   const scrolled = useSyncExternalStore(
     subscribeScroll,
@@ -54,7 +56,7 @@ export function Navbar() {
 
   async function handleSignOut() {
     closeMenus();
-    await signOut();
+    await logout();
   }
 
   const linkClass = (href: string) =>
@@ -96,8 +98,16 @@ export function Navbar() {
               <div className="skeleton hidden h-4 w-16 sm:block" />
             </div>
           ) : user ? (
-            /* Desktop avatar (dropdown removed) */
-            <div className="hidden lg:block">
+            /* Desktop avatar — links to the logged-in user's dashboard. */
+            <Link
+              href={
+                DASHBOARD_ROUTES[
+                  ((user as { role?: string }).role || "Customer") as UserRole
+                ].path
+              }
+              className="hidden lg:block"
+              aria-label="Open dashboard"
+            >
               <div className="w-9 rounded-full ring ring-primary ring-offset-2 ring-offset-base-100">
                 {user.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -112,7 +122,7 @@ export function Navbar() {
                   </div>
                 )}
               </div>
-            </div>
+            </Link>
           ) : (
             <div className="hidden items-center gap-2 lg:flex">
               <Link href="/login" className="btn btn-ghost btn-sm text-base-content/80">

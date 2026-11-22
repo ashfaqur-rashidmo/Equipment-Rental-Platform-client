@@ -14,6 +14,9 @@ import {
 } from "lucide-react";
 
 import EquipmentTable from "@/app/component/ownerEquipments/EquipmentTable";
+import Pagination from "@/components/ui/pagination";
+
+const PAGE_SIZE = 10;
 
 export default function MyEquipment() {
   const { data: session } = useSession();
@@ -23,6 +26,14 @@ export default function MyEquipment() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [page, setPage] = useState(1);
+
+  const totalPages = Math.max(1, Math.ceil(equipment.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const pageEquipment = equipment.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -220,7 +231,17 @@ export default function MyEquipment() {
 
       {/* Equipment Table */}
       {!loading && !error && (
-        <EquipmentTable equipment={equipment} />
+        <EquipmentTable equipment={pageEquipment} />
+      )}
+
+      {!loading && !error && (
+        <Pagination
+          total={equipment.length}
+          pageSize={PAGE_SIZE}
+          page={safePage}
+          onPageChange={setPage}
+          className="mt-6"
+        />
       )}
 
     </div>

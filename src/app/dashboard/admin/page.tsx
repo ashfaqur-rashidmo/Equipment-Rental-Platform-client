@@ -3,8 +3,15 @@
 import React, { useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { motion } from "framer-motion";
-import { Users, Package, CalendarClock, Shield, HardHat } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  Users,
+  Package,
+  CalendarClock,
+  Shield,
+  HardHat,
+  CheckCircle2,
+  Coins,
+} from "lucide-react";
 import Link from "next/link";
 import {
   BarChart,
@@ -17,14 +24,14 @@ import {
   YAxis,
 } from "recharts";
 
-import { EquipmentItem } from "@/data/equipment";
+import { EquipmentItem, formatPrice } from "@/data/equipment";
 import { Rental } from "@/lib/api/rentals";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface AdminStat {
   label: string;
-  value: number;
+  value: number | string;
   icon: typeof Users;
   color: string;
   fill: string;
@@ -36,9 +43,33 @@ const quickActions = [
   { href: "/dashboard/admin/all-rentals", label: "Monitor Rentals", icon: CalendarClock },
 ];
 
-async function fetchJson<T>(url: string): Promise<T> {
+const MONTHS_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
+
+const lastSixMonths = (): string[] => {
+  const now = new Date();
+  return Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+    return MONTHS_SHORT[d.getMonth()];
+  });
+};
+
+async function fetchJson<T>(url: string, token?: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${url}`, {
     cache: "no-store",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
 
   if (!response.ok) {
@@ -51,10 +82,19 @@ async function fetchJson<T>(url: string): Promise<T> {
 export default function AdminDashboardPage() {
   const { data: session } = useSession();
   const user = session?.user as { name?: string; role?: string } | undefined;
+  const token = session?.session?.token;
 
   const [stats, setStats] = useState<AdminStat[]>([]);
+  const [supportCounts, setSupportCounts] = useState({
+    users: 0,
+    equipment: 0,
+    rentals: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [monthlyBookings, setMonthlyBookings] = useState<
+    { month: string; count: number }[]
+  >([]);
 
   const loadStats = async () => {
     try {
@@ -62,14 +102,42 @@ export default function AdminDashboardPage() {
       setError("");
 
       const [users, equipment, rentals] = await Promise.all([
-        fetchJson<unknown[]>("/admin/users"),
-        fetchJson<EquipmentItem[]>("/admin/equipment"),
-        fetchJson<Rental[]>("/admin/rentals"),
+        fetchJson<unknown[]>("/admin/users", token),
+        fetchJson<EquipmentItem[]>("/admin/equipment", token),
+        fetchJson<Rental[]>("/admin/rentals", token),
       ]);
 
       const userList = Array.isArray(users) ? users : [];
       const equipmentList = Array.isArray(equipment) ? equipment : [];
       const rentalList = Array.isArray(rentals) ? rentals : [];
+
+      setSupportCounts({
+        users: userList.length,
+        equipment: equipmentList.length,
+        rentals: rentalList.length,
+      });
+
+      // Completed rentals, total revenue, and monthly booking statistics.
+      const completedRentals = rentalList.filter(
+        (r) => String(r.bookingStatus || "").toLowerCase() === "confirmed"
+      ).length;
+      const totalRevenue = rentalList
+        .filter((r) => String(r.paymentStatus || "").toLowerCase() === "paid")
+        .reduce((sum, r) => sum + Number(r.totalAmount || 0), 0);
+
+      const labels = lastSixMonths();
+      const monthlyCounts = labels.map(() => 0);
+      rentalList.forEach((r) => {
+        const d = new Date(r.bookingDate);
+        if (Number.isNaN(d.getTime())) return;
+        const label = MONTHS_SHORT[d.getMonth()];
+        const idx = labels.indexOf(label);
+        if (idx !== -1) monthlyCounts[idx] += 1;
+      });
+      const monthlyBookings = labels.map((month, i) => ({
+        month,
+        count: monthlyCounts[i],
+      }));
 
       const pendingApprovals = equipmentList.filter(
         (item) => String(item.status || "").toLowerCase() === "pending"
@@ -104,7 +172,23 @@ export default function AdminDashboardPage() {
           color: "text-base-content",
           fill: "var(--color-base-content)",
         },
+        {
+          label: "Completed Rentals",
+          value: completedRentals,
+          icon: CheckCircle2,
+          color: "text-success",
+          fill: "var(--color-success)",
+        },
+        {
+          label: "Total Revenue",
+          value: formatPrice(totalRevenue),
+          icon: Coins,
+          color: "text-primary",
+          fill: "var(--color-primary)",
+        },
       ]);
+
+      setMonthlyBookings(monthlyBookings);
     } catch (err) {
       console.error("Fetch stats error:", err);
 
@@ -119,8 +203,10 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
-    loadStats();
-  }, []);
+    // Wait for the session/token before fetching — the fetch needs
+    // authorization, so firing immediately would 401 every time.
+    if (token) void (async () => { await loadStats(); })();
+  }, [token]);
 
   const chartData = stats.map((stat) => ({
     label: stat.label,
@@ -165,13 +251,12 @@ export default function AdminDashboardPage() {
             <p className="mt-1 text-sm text-base-content/70">
               Monitor users, equipment and rentals across the platform.
             </p>
-            <Button
-              variant="default"
-              size="sm"
-              className="mt-4 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold shadow-lg"
+            <Link
+              href="/dashboard/admin"
+              className="mt-4 btn btn-primary btn-sm font-bold shadow-lg"
             >
               Manage Dashboard
-            </Button>
+            </Link>
           </div>
           <div className="hidden md:block md:w-[320px] rounded-xl overflow-hidden border border-blue-200/50 shadow-lg bg-white/40 backdrop-blur-sm">
             <img
@@ -278,6 +363,51 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
+      {/* Monthly bookings chart */}
+      {!loading && monthlyBookings.length > 0 && (
+        <div className="mb-6 rounded-box border border-base-300 bg-base-100 p-6 shadow-sm">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-base-content/70">
+            Monthly Bookings
+          </h3>
+
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart
+              data={monthlyBookings.map((m) => ({
+                month: m.month,
+                count: m.count,
+              }))}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="currentColor"
+                strokeOpacity={0.1}
+              />
+              <XAxis
+                dataKey="month"
+                tick={{ fontSize: 11, fill: "currentColor" }}
+                stroke="transparent"
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: "currentColor" }}
+                stroke="transparent"
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "var(--color-base-100)",
+                  borderColor: "var(--color-base-300)",
+                  borderRadius: "0.5rem",
+                }}
+                labelStyle={{ color: "var(--color-base-content)" }}
+                formatter={(value) =>
+                  value == null ? "" : Number(value).toLocaleString("en-US")
+                }
+              />
+              <Bar dataKey="count" radius={4} fill="var(--color-primary)" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
       {/* Recent activity placeholder */}
       <div className="rounded-box border border-base-300 bg-base-100 shadow-sm p-6">
         <h3 className="text-sm font-semibold text-base-content/70 uppercase tracking-wider mb-4">
@@ -285,16 +415,28 @@ export default function AdminDashboardPage() {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex flex-col gap-2">
-            <div className="text-xs text-base-content/50">Users this week</div>
-            <div className="text-xl font-bold text-base-content">12</div>
+            <div className="text-xs text-base-content/50">
+              Users this week
+            </div>
+            <div className="text-xl font-bold text-base-content">
+              {supportCounts.users}
+            </div>
           </div>
           <div className="flex flex-col gap-2">
-            <div className="text-xs text-base-content/50">Equipment approved</div>
-            <div className="text-xl font-bold text-base-content">4</div>
+            <div className="text-xs text-base-content/50">
+              Equipment approved
+            </div>
+            <div className="text-xl font-bold text-base-content">
+              {supportCounts.equipment}
+            </div>
           </div>
           <div className="flex flex-col gap-2">
-            <div className="text-xs text-base-content/50">Rentals completed</div>
-            <div className="text-xl font-bold text-base-content">18</div>
+            <div className="text-xs text-base-content/50">
+              Rentals completed
+            </div>
+            <div className="text-xl font-bold text-base-content">
+              {supportCounts.rentals}
+            </div>
           </div>
         </div>
       </div>

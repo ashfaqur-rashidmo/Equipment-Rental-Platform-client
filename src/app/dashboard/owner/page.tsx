@@ -17,7 +17,17 @@ import {
   PackageOpen,
   RefreshCw,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  BarChart,
+  Bar,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/data/equipment";
 import { formatDate, cn } from "@/lib/utils";
@@ -30,6 +40,8 @@ export default function OwnerDashboardPage() {
   const { data: session, isPending } = useSession();
   const user = session?.user;
   const ownerId = user?.id;
+  const router = useRouter();
+  const [search, setSearch] = useState("");
 
   const [stats, setStats] = useState<OwnerDashboardStats | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +52,7 @@ export default function OwnerDashboardPage() {
 
     let cancelled = false;
 
-    GetOwnerDashboard(ownerId)
+    GetOwnerDashboard(ownerId, session?.session?.token)
       .then((data) => {
         if (!cancelled) {
           setError(null);
@@ -70,6 +82,7 @@ export default function OwnerDashboardPage() {
     confirmedCount: 0,
     cancelledCount: 0,
     monthlyBookings: [],
+    monthlyEarnings: [],
     recentRentals: [],
   };
 
@@ -104,11 +117,25 @@ export default function OwnerDashboardPage() {
           <div className="flex h-14 items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <input
-                  type="search"
-                  placeholder="Search equipment..."
-                  className="pl-9 pr-4 h-9 w-64 rounded-full border border-base-300 bg-base-100 text-sm text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const query = search.trim();
+                    router.push(
+                      query
+                        ? `/all-equipment?search=${encodeURIComponent(query)}`
+                        : "/all-equipment"
+                    );
+                  }}
+                >
+                  <input
+                    type="search"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search equipment..."
+                    className="pl-9 pr-4 h-9 w-64 rounded-full border border-base-300 bg-base-100 text-sm text-base-content focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                </form>
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40">
                   <HardHat className="h-4 w-4" />
                 </div>
@@ -119,7 +146,11 @@ export default function OwnerDashboardPage() {
               <span className="hidden sm:block text-sm text-base-content/60 font-medium">
                 Owner Overview
               </span>
-              <button className="relative p-2 text-base-content/60 hover:text-base-content focus:outline-none">
+              <Link
+                href="/dashboard/owner"
+                className="relative p-2 text-base-content/60 hover:text-base-content focus:outline-none"
+                aria-label="Open dashboard"
+              >
                 <svg
                   width="20"
                   height="20"
@@ -134,15 +165,15 @@ export default function OwnerDashboardPage() {
                   <path d="M15 18h5v-18H0v21h18" />
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                 </svg>
-                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-error"></span>
-              </button>
+                <span
+                  className="absolute top-1 right-1 h-2 w-2 rounded-full bg-error"
+                  aria-hidden
+                />
+              </Link>
               <img
-                src="/images/equipment/avatar.jpg"
-                alt="User avatar"
+                src="/images/equipment/hero.jpg"
+                alt="Equipment"
                 className="h-8 w-8 rounded-full object-cover border border-base-300 bg-base-200"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23d97706'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-family='sans-serif' font-size='16' font-weight='bold'%3EO%3C/text%3E%3C/svg%3E";
-                }}
               />
             </div>
           </div>
@@ -166,13 +197,12 @@ export default function OwnerDashboardPage() {
               <p className="mt-1 text-sm text-base-content/70">
                 Track your equipment, bookings and earnings in one place.
               </p>
-              <Button
-                variant="default"
-                size="sm"
-                className="mt-4 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold shadow-lg"
+              <Link
+                href="/all-equipment"
+                className="mt-4 btn btn-primary btn-sm font-bold shadow-lg"
               >
                 Explore Equipment
-              </Button>
+              </Link>
             </div>
             <div className="hidden md:block md:w-[320px] rounded-xl overflow-hidden border border-blue-200/50 shadow-lg bg-white/40 backdrop-blur-sm">
               <img
@@ -484,6 +514,52 @@ export default function OwnerDashboardPage() {
                 </div>
               </motion.div>
 
+              {/* Monthly Earnings */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="rounded-xl border border-base-300 bg-base-100 p-6 shadow-sm"
+              >
+                <h3 className="text-sm font-semibold mb-4">Monthly Earnings</h3>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart
+                    data={s.monthlyEarnings.map((m) => ({
+                      month: m.month,
+                      amount: formatPrice(m.amount),
+                    }))}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="currentColor"
+                      strokeOpacity={0.1}
+                    />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fontSize: 11, fill: "currentColor" }}
+                      stroke="transparent"
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: "currentColor" }}
+                      stroke="transparent"
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "var(--color-base-100)",
+                        borderColor: "var(--color-base-300)",
+                        borderRadius: "0.5rem",
+                      }}
+                      labelStyle={{ color: "var(--color-base-content)" }}
+                    />
+                    <Bar
+                      dataKey="amount"
+                      radius={4}
+                      fill="var(--color-primary)"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </motion.div>
+
               {/* Booking Status */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -583,7 +659,7 @@ export default function OwnerDashboardPage() {
                   transition={{ delay: 0.4 }}
                   className="mt-6 flex items-center justify-between p-3 rounded-lg border border-base-200 bg-base-200/50 text-sm"
                 >
-                  <span className="text-base-content/60">Bookings this month</span>
+                  <span className="text-base-content/60">Total Bookings</span>
                   <span className="text-base-content font-medium">
                     {s.totalBookings}
                   </span>

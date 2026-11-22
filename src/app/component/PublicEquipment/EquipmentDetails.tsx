@@ -1,4 +1,7 @@
 
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -29,6 +32,7 @@ const EquipmentDetails = ({ equipment }: EquipmentDetailsProps) => {
   const isAvailable = equipment.availableQuantity > 0;
   const hasImage = Boolean(equipment.image?.trim());
   const equipmentId = equipment._id || equipment.id || "";
+  const [imageError, setImageError] = useState(false);
 
   /** Label + value pairs shown in the summary card. */
   const specs = [
@@ -78,7 +82,7 @@ const EquipmentDetails = ({ equipment }: EquipmentDetailsProps) => {
 
             {/* Equipment Image */}
             <figure className="relative h-64 w-full overflow-hidden rounded-box border border-base-300 bg-base-100 sm:h-96">
-              {hasImage ? (
+              {hasImage && !imageError ? (
                 <Image
                   src={equipment.image as string}
                   alt={equipment.name}
@@ -87,6 +91,7 @@ const EquipmentDetails = ({ equipment }: EquipmentDetailsProps) => {
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 60vw"
                   priority
+                  onError={() => setImageError(true)}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center">
@@ -177,6 +182,7 @@ const EquipmentDetails = ({ equipment }: EquipmentDetailsProps) => {
                 equipmentName={equipment.name}
                 rentalPrice={Number(equipment.rentalPrice) || 0}
                 rentalType={equipment.rentalType}
+                availableQuantity={equipment.availableQuantity}
               />
 
               <AddFavoriteButton equipmentId={equipmentId} />

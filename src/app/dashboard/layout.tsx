@@ -7,7 +7,7 @@ import CustomerDashboardSidebar from "@/app/component/CustomerDashboard/Dashboar
 import OwnerDashboardSidebar from "@/app/component/OwnerDashboard/DashboardSidebar";
 import AdminDashboardSidebar from "@/app/component/AdminDashboard/AdminDashboardSidebar";
 
-const layout = ({ children }: { children: React.ReactNode }) => {
+const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { data: session } = useSession();
   const role = (session?.user as { role?: string })?.role;
 
@@ -29,4 +29,4 @@ const layout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export default layout;
+export default DashboardLayout;

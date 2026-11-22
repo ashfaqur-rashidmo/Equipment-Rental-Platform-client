@@ -13,6 +13,10 @@ import {
   Save,
 } from "lucide-react";
 import { toast } from "sonner";
+import Pagination from "@/components/ui/pagination";
+
+const PAGE_SIZE = 10;
+import { useSession } from "@/lib/auth-client";
 
 import { EquipmentItem } from "@/data/equipment";
 import StatusBadge from "@/app/component/ownerEquipments/StatusBadge";
@@ -30,6 +34,10 @@ type EditForm = Partial<
 };
 
 export default function AllEquipmentPage() {
+  const { data: session } = useSession();
+  const token = session?.session?.token;
+  const [page, setPage] = useState(1);
+
   const [equipment, setEquipment] = useState<EquipmentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -56,6 +64,9 @@ export default function AllEquipmentPage() {
 
       const response = await fetch(`${API_BASE_URL}/admin/equipment`, {
         cache: "no-store",
+        headers: session?.session?.token
+          ? { Authorization: `Bearer ${session.session.token}` }
+          : undefined,
       });
 
       if (!response.ok) {
@@ -81,8 +92,11 @@ export default function AllEquipmentPage() {
   };
 
   useEffect(() => {
-    fetchEquipment();
-  }, []);
+    if (token)
+      void (async () => {
+        await fetchEquipment();
+      })();
+  }, [token]);
 
   const equipmentId = (item: EquipmentItem) => item._id || item.id;
 
@@ -118,6 +132,16 @@ export default function AllEquipmentPage() {
     );
   });
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredEquipment.length / PAGE_SIZE)
+  );
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const pageEquipment = filteredEquipment.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE
+  );
+
   // Set the equipment status (Approve / Reject) via the generic equipment route.
   const updateStatus = async (
     item: EquipmentItem,
@@ -132,7 +156,12 @@ export default function AllEquipmentPage() {
     try {
       const response = await fetch(`${API_BASE_URL}/equipment/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.session?.token
+            ? { Authorization: `Bearer ${session.session.token}` }
+            : {}),
+        },
         body: JSON.stringify({ status }),
       });
 
@@ -201,7 +230,12 @@ export default function AllEquipmentPage() {
     try {
       const response = await fetch(`${API_BASE_URL}/equipment/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.session?.token
+            ? { Authorization: `Bearer ${session.session.token}` }
+            : {}),
+        },
         body: JSON.stringify({
           name: form.name,
           category: form.category,
@@ -249,6 +283,9 @@ export default function AllEquipmentPage() {
     try {
       const response = await fetch(`${API_BASE_URL}/equipment/${id}`, {
         method: "DELETE",
+        headers: session?.session?.token
+          ? { Authorization: `Bearer ${session.session.token}` }
+          : undefined,
       });
 
       const result = await response.json().catch(() => null);
@@ -399,7 +436,7 @@ export default function AllEquipmentPage() {
               </thead>
 
               <tbody>
-                {filteredEquipment.map((item) => {
+                {pageEquipment.map((item) => {
                   const id = equipmentId(item);
                   const busyStatus = isBusy(`status:${id}`);
                   const busyDelete = isBusy(`delete:${id}`);
@@ -553,11 +590,19 @@ export default function AllEquipmentPage() {
 
           <div className="border-t border-base-300 px-5 py-3">
             <p className="text-xs text-base-content/50">
-              Showing {filteredEquipment.length} of {equipment.length} listings
+              Showing {pageEquipment.length} of {filteredEquipment.length} listings
             </p>
           </div>
         </div>
       )}
+
+      <Pagination
+        total={filteredEquipment.length}
+        pageSize={PAGE_SIZE}
+        page={safePage}
+        onPageChange={setPage}
+        className="mt-4"
+      />
 
       {/* Update Equipment Modal */}
       {formOpen && (

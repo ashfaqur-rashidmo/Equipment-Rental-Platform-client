@@ -1,5 +1,6 @@
 
 import { GetEquipments } from "@/lib/api/getEquipments";
+import { EquipmentItem } from "@/data/equipment";
 import {
   GetEquipmentCategories,
   type EquipmentCategory,
@@ -36,7 +37,9 @@ const AllEquipmentsPage = async ({ searchParams }: PageProps) => {
   const facetQuery = facetSearch.toString();
 
   const [equipments, categoryRows] = await Promise.all([
-    GetEquipments(query),
+    // The equipment list is optional for the listing page — fall back to
+    // an empty list when the API is unavailable.
+    GetEquipments(query).catch(() => [] as EquipmentItem[]),
     GetEquipmentCategories(facetQuery),
   ]);
 

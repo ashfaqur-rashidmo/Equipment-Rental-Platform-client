@@ -6,19 +6,45 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useSession } from "@/lib/auth-client";
 import CategorySelect from "@/app/component/ownerEquipments/CategorySelect";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+const RENTAL_TYPES = ["Daily", "Weekly", "Monthly"] as const;
+const CONDITIONS = ["New", "Like New", "Good", "Fair", "Poor"] as const;
+
+type RentalType = (typeof RENTAL_TYPES)[number];
+type Condition = (typeof CONDITIONS)[number];
+
+/**
+ * Stored values are capitalized; older rows may hold lowercase ones, so
+ * normalize whatever the API returns into the canonical form.
+ */
+const normalizeRentalType = (value: string | undefined): RentalType => {
+  const found = RENTAL_TYPES.find(
+    (type) => type.toLowerCase() === (value || "").trim().toLowerCase()
+  );
+  return found || "Daily";
+};
+
+const normalizeCondition = (value: string | undefined): Condition => {
+  const found = CONDITIONS.find(
+    (condition) =>
+      condition.toLowerCase() === (value || "").trim().toLowerCase()
+  );
+  return found || "Good";
+};
 
 interface EquipmentFormData {
   name: string;
   description: string;
   category: string;
   rentalPrice: number;
-  rentalType: "daily" | "weekly" | "monthly";
+  rentalType: RentalType;
   location: string;
   availableQuantity: number;
-  condition: "excellent" | "good" | "fair";
+  condition: Condition;
   brand: string;
   model: string;
   image: string;
@@ -36,15 +62,18 @@ const EditEquipmentPage = () => {
 
   const router = useRouter();
 
+  const { data: session } = useSession();
+  const token = session?.session?.token;
+
   const [formData, setFormData] = useState<EquipmentFormData>({
     name: "",
     description: "",
     category: "",
     rentalPrice: 0,
-    rentalType: "daily",
+    rentalType: "Daily",
     location: "",
     availableQuantity: 1,
-    condition: "good",
+    condition: "New",
     brand: "",
     model: "",
     image: "",
@@ -89,10 +118,10 @@ const EditEquipmentPage = () => {
           description: selectedEquipment.description || "",
           category: selectedEquipment.category || "",
           rentalPrice: selectedEquipment.rentalPrice || 0,
-          rentalType: selectedEquipment.rentalType || "daily",
+          rentalType: normalizeRentalType(selectedEquipment.rentalType),
           location: selectedEquipment.location || "",
           availableQuantity: selectedEquipment.availableQuantity || 1,
-          condition: selectedEquipment.condition || "good",
+          condition: normalizeCondition(selectedEquipment.condition),
           brand: selectedEquipment.brand || "",
           model: selectedEquipment.model || "",
           image: selectedEquipment.image || "",
@@ -114,7 +143,9 @@ const EditEquipmentPage = () => {
       }
     };
 
-    fetchEquipment();
+    void (async () => {
+      await fetchEquipment();
+    })();
 
     return () => controller.abort();
   }, [equipmentId]);
@@ -163,6 +194,7 @@ const EditEquipmentPage = () => {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(formData),
         }
@@ -352,9 +384,11 @@ const EditEquipmentPage = () => {
                 onChange={handleChange}
                 className="select select-bordered w-full"
               >
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
+                {RENTAL_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -386,9 +420,11 @@ const EditEquipmentPage = () => {
                 onChange={handleChange}
                 className="select select-bordered w-full"
               >
-                <option value="excellent">Excellent</option>
-                <option value="good">Good</option>
-                <option value="fair">Fair</option>
+                {CONDITIONS.map((condition) => (
+                  <option key={condition} value={condition}>
+                    {condition}
+                  </option>
+                ))}
               </select>
             </div>
 

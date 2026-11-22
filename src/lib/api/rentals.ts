@@ -21,10 +21,18 @@ export interface Rental {
 }
 
 /** All rentals of the logged-in customer, newest booking first. */
-export const GetMyRentals = async (userId: string): Promise<Rental[]> => {
+export const GetMyRentals = async (
+  userId: string,
+  token?: string
+): Promise<Rental[]> => {
   const response = await fetch(
     `${API_BASE_URL}/rentals?userId=${encodeURIComponent(userId)}`,
-    { cache: "no-store" }
+    {
+      cache: "no-store",
+      headers: token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined,
+    }
   );
 
   if (!response.ok) throw new Error("Failed to fetch rentals.");
@@ -34,10 +42,18 @@ export const GetMyRentals = async (userId: string): Promise<Rental[]> => {
 };
 
 /** All rentals on the logged-in owner's equipment, newest booking first. */
-export const GetOwnerRentals = async (ownerId: string): Promise<Rental[]> => {
+export const GetOwnerRentals = async (
+  ownerId: string,
+  token?: string
+): Promise<Rental[]> => {
   const response = await fetch(
     `${API_BASE_URL}/owner/rentals?ownerId=${encodeURIComponent(ownerId)}`,
-    { cache: "no-store" }
+    {
+      cache: "no-store",
+      headers: token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined,
+    }
   );
 
   if (!response.ok) throw new Error("Failed to fetch rentals.");
@@ -47,10 +63,18 @@ export const GetOwnerRentals = async (ownerId: string): Promise<Rental[]> => {
 };
 
 /** One booking by its id — used by the payment page. */
-export const GetRentalById = async (id: string): Promise<Rental> => {
+export const GetRentalById = async (
+  id: string,
+  token?: string
+): Promise<Rental> => {
   const response = await fetch(
     `${API_BASE_URL}/rentals/${encodeURIComponent(id)}`,
-    { cache: "no-store" }
+    {
+      cache: "no-store",
+      headers: token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined,
+    }
   );
 
   const data = await response.json().catch(() => null);
@@ -79,11 +103,15 @@ export interface CreateRentalPayload {
 
 /** Books an equipment for the logged-in customer. */
 export const ApplyForRental = async (
-  payload: CreateRentalPayload
+  payload: CreateRentalPayload,
+  token?: string
 ): Promise<Rental> => {
   const response = await fetch(`${API_BASE_URL}/rentals`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify(payload),
   });
 

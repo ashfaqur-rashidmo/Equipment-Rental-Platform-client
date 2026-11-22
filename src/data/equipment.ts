@@ -1,8 +1,8 @@
-export type RentalType = "daily" | "weekly" | "monthly";
+export type RentalType = "Daily" | "Weekly" | "Monthly";
 
-export type EquipmentStatus = "pending" | "approved" | "rejected";
+export type EquipmentStatus = "Pending" | "Approved" | "Rejected";
 
-export type EquipmentCondition = "excellent" | "good" | "fair";
+export type EquipmentCondition = "New" | "Like New" | "Good" | "Fair" | "Poor";
 
 export interface EquipmentOwner {
   id: string;

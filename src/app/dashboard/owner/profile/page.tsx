@@ -74,13 +74,15 @@ export default function OwnerProfilePage() {
   useEffect(() => {
     if (!user || isEditing) return;
 
-    setFormData({
-      name: user.name || "",
-      email: user.email || "",
-      phone: user.phone || "",
-      address: user.address || "",
-      image: user.image || null,
-    });
+    void (async () => {
+      setFormData({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        address: user.address || "",
+        image: user.image || null,
+      });
+    })();
   }, [user, isEditing]);
 
   const handleChange = (
@@ -250,9 +252,11 @@ export default function OwnerProfilePage() {
                     className="input-bordered"
                     placeholder="you@example.com"
                   />
-                  <Badge variant="outline" className="mt-1">
-                    Verified Owner
-                  </Badge>
+                  {user?.emailVerified && (
+                    <Badge variant="outline" className="mt-1">
+                      Verified Owner
+                    </Badge>
+                  )}
                 </div>
               </div>
 

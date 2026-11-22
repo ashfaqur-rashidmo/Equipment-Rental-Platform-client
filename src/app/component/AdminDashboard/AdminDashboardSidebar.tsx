@@ -3,7 +3,8 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { signOut, useSession } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
+import { useLogOut } from "@/lib/logout";
 import { DASHBOARD_ROUTES, UserRole, siteConfig } from "@/config/site";
 import {
   Sidebar,
@@ -34,6 +35,7 @@ export default function AdminDashboardSidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const user = session?.user;
+  const logout = useLogOut();
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
@@ -103,7 +105,6 @@ export default function AdminDashboardSidebar() {
                         <Link
                           href={item.path}
                           className="w-full"
-                          onClick={() => {}}
                         >
                           <Icon className="h-4 w-4 shrink-0" />
                           <span className="font-medium">{item.label}</span>
@@ -126,7 +127,7 @@ export default function AdminDashboardSidebar() {
                   render={
                     <button
                       type="button"
-                      onClick={() => signOut()}
+                      onClick={logout}
                       className="w-full text-destructive"
                     >
                       <LogOut className="h-4 w-4 shrink-0" />
@@ -140,7 +141,12 @@ export default function AdminDashboardSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="px-4 pb-4">
-        <button className="btn btn-outline btn-sm w-full">System Settings</button>
+        <Link
+          href="/dashboard/admin/profile"
+          className="btn btn-outline btn-sm w-full"
+        >
+          System Settings
+        </Link>
       </SidebarFooter>
     </Sidebar>
   );

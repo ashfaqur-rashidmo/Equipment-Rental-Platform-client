@@ -16,7 +16,6 @@ import {
   AlertTriangle,
   RefreshCw,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { formatPrice } from "@/data/equipment";
 import { cn } from "@/lib/utils";
@@ -46,7 +45,7 @@ export default function CustomerDashboardPage() {
 
     let cancelled = false;
 
-    GetCustomerDashboard(userId)
+    GetCustomerDashboard(userId, session?.session?.token)
       .then((data) => {
         if (!cancelled) {
           setError(null);
@@ -131,13 +130,12 @@ export default function CustomerDashboardPage() {
               <p className="mt-1 text-sm text-base-content/70">
                 Track your rentals, spending and saved equipment in one place.
               </p>
-              <Button
-                variant="default"
-                size="sm"
-                className="mt-4 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold shadow-lg"
+              <Link
+                href="/all-equipment"
+                className="mt-4 btn btn-primary btn-sm font-bold shadow-lg"
               >
                 Browse Equipment
-              </Button>
+              </Link>
             </div>
             <div className="hidden md:block md:w-[320px] rounded-xl overflow-hidden border border-blue-200/50 shadow-lg bg-white/40 backdrop-blur-sm">
               <img
@@ -334,12 +332,12 @@ export default function CustomerDashboardPage() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold">Recent Bookings</h3>
-                  <a
+                  <Link
                     href="/dashboard/customer/my-rentals"
                     className="btn btn-outline btn-sm text-sm"
                   >
                     Manage Rentals <span className="text-[#ea580c]">→</span>
-                  </a>
+                  </Link>
                 </div>
                 <AnimatePresence>
                   {s.recentRentals.length === 0 ? (
@@ -366,12 +364,12 @@ export default function CustomerDashboardPage() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold">Favorite Equipment</h3>
-                  <a
+                  <Link
                     href="/dashboard/customer/favorites"
                     className="btn btn-outline btn-sm text-sm"
                   >
                     Manage Favorites <span className="text-[#ea580c]">→</span>
-                  </a>
+                  </Link>
                 </div>
                 <AnimatePresence>
                   {s.favorites.length === 0 ? (

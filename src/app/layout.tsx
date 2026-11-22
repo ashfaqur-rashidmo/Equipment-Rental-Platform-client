@@ -4,7 +4,6 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { Navbar } from "@/components/home/navbar";
 import { Footer } from "@/components/home/footer";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 
 
 const geistSans = Geist({

@@ -13,11 +13,16 @@ import {
 import DashboardHeader from "@/app/component/Dashboard/DashboardHeader";
 import StateCard from "@/app/component/Dashboard/StateCard";
 import FavoritesTable from "@/app/component/CustomerDashboard/FavoritesTable";
+import Pagination from "@/components/ui/pagination";
+
+const PAGE_SIZE = 10;
 
 export default function FavoritesPage() {
   const { data: session, isPending } = useSession();
   const user = session?.user;
   const userId = user?.id;
+
+  const [page, setPage] = useState(1);
 
   const [state, setState] = useState<{
     userId: string;
@@ -32,7 +37,7 @@ export default function FavoritesPage() {
 
     let cancelled = false;
 
-    GetMyFavorites(userId)
+    GetMyFavorites(userId, session?.session?.token)
       .then((rows) => {
         if (!cancelled) setState({ userId, rows });
       })
@@ -51,11 +56,18 @@ export default function FavoritesPage() {
   const error = current?.error ?? null;
   const showLoader = isPending || (Boolean(userId) && !current);
 
+  const totalPages = Math.max(1, Math.ceil(favorites.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const pageFavorites = favorites.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE
+  );
+
   const handleRemoveFavorite = async (favoriteId: string) => {
     setRemovingId(favoriteId);
 
     try {
-      await RemoveFavorite(favoriteId);
+      await RemoveFavorite(favoriteId, session?.session?.token);
       setState((prev) =>
         prev
           ? { ...prev, rows: prev.rows.filter((row) => row._id !== favoriteId) }
@@ -148,9 +160,19 @@ export default function FavoritesPage() {
       {/* Saved equipment table */}
       {hasRows && (
         <FavoritesTable
-          rows={favorites}
+          rows={pageFavorites}
           removingId={removingId}
           onRemove={handleRemoveFavorite}
+        />
+      )}
+
+      {hasRows && (
+        <Pagination
+          total={favorites.length}
+          pageSize={PAGE_SIZE}
+          page={safePage}
+          onPageChange={setPage}
+          className="mt-6"
         />
       )}
     </div>

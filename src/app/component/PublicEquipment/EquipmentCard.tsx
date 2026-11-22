@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Package } from "lucide-react";
@@ -11,6 +14,7 @@ const EquipmentCard = ({ equipment }: EquipmentCardProps) => {
   const equipmentId = equipment._id || equipment.id;
 
   const isAvailable = equipment.availableQuantity > 0;
+  const [imageError, setImageError] = useState(false);
 
   const formattedPrice = Number(equipment.rentalPrice).toLocaleString(
     "en-BD"
@@ -20,7 +24,7 @@ const EquipmentCard = ({ equipment }: EquipmentCardProps) => {
     <div className="overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       {/* Equipment Image */}
       <div className="relative h-56 w-full bg-base-200">
-        {equipment.image?.trim() ? (
+        {equipment.image?.trim() && !imageError ? (
           <Image
             src={equipment.image}
             alt={equipment.name}
@@ -28,6 +32,7 @@ const EquipmentCard = ({ equipment }: EquipmentCardProps) => {
             unoptimized
             className="object-cover"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            onError={() => setImageError(true)}
           />
         ) : (
           <div className="flex h-full items-center justify-center">

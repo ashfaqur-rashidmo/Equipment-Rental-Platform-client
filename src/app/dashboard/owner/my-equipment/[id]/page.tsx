@@ -69,6 +69,8 @@ export default function EquipmentDetailsPage() {
   const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchEquipment = async () => {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
@@ -83,8 +85,6 @@ export default function EquipmentDetailsPage() {
         setLoading(false);
         return;
       }
-
-      const controller = new AbortController();
 
       try {
         setLoading(true);
@@ -136,17 +136,12 @@ export default function EquipmentDetailsPage() {
         }
       }
 
-      return () => controller.abort();
     };
 
     fetchEquipment();
-  }, [equipmentId, retryCount]);
 
-  const isOwner =
-    !!equipment &&
-    !!user &&
-    (String(equipment.ownerId) === String(user.id) ||
-      equipment.ownerEmail === user.email);
+    return () => controller.abort();
+  }, [equipmentId, retryCount]);
 
   const formatPrice = (price: string | number) => {
     const numericPrice = Number(price);

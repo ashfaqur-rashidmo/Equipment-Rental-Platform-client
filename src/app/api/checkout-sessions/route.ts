@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { API_BASE_URL } from "@/lib/baseurl";
+import { getSession } from "@/lib/core/server";
 
 /**
  * Creates a Stripe Checkout Session for one booking.
@@ -35,9 +36,13 @@ export async function POST(request: Request) {
     if (!rentalId) return fail("Missing booking id.");
 
     // Look up the booking so the charge matches our record exactly.
+    const token = (await getSession())?.session?.token;
     const bookingResponse = await fetch(
       `${API_BASE_URL}/rentals/${encodeURIComponent(rentalId)}`,
-      { cache: "no-store" }
+      {
+        cache: "no-store",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      }
     );
     const booking = await bookingResponse.json();
 

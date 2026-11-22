@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useSession } from "@/lib/auth-client";
 
 interface DeleteEquipmentProps {
   equipmentId: string;
@@ -28,6 +29,9 @@ export default function DeleteEquipment({
 }: DeleteEquipmentProps) {
   const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const { data: session } = useSession();
+  const token = session?.session?.token;
 
   const handleDelete = async () => {
     try {
@@ -44,6 +48,9 @@ export default function DeleteEquipment({
         `${API_BASE_URL}/equipment/${equipmentId}`,
         {
           method: "DELETE",
+          headers: token
+            ? { Authorization: `Bearer ${token}` }
+            : undefined,
         }
       );
 

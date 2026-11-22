@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AlertTriangle, CheckCircle2, Clock3 } from "lucide-react";
 import { stripe } from "@/lib/stripe";
 import { API_BASE_URL } from "@/lib/baseurl";
+import { getSession } from "@/lib/core/server";
 
 export const dynamic = "force-dynamic";
 
@@ -68,15 +69,26 @@ export default async function SuccessPage({
         );
 
         if (rentalId) {
-          await fetch(
+          const token = (await getSession())?.session?.token;
+          const patchRes = await fetch(
             `${API_BASE_URL}/rentals/${encodeURIComponent(rentalId)}`,
             {
               method: "PATCH",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
               body: JSON.stringify({ paymentStatus: "Paid" }),
               cache: "no-store",
             }
           );
+
+          if (!patchRes.ok) {
+            console.error(
+              `Failed to mark rental ${rentalId} as paid:`,
+              patchRes.status
+            );
+          }
         }
       } else {
         status = "unpaid";

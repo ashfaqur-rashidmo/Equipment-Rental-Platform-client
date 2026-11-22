@@ -12,6 +12,8 @@ export interface OwnerDashboardStats {
   cancelledCount: number;
   /** Last 6 months of booking counts for the line chart. */
   monthlyBookings: { month: string; count: number }[];
+  /** Last 6 months of earnings (sum of paid rentals' totalAmount) per month. */
+  monthlyEarnings: { month: string; amount: number }[];
   recentRentals: Rental[];
 }
 
@@ -30,23 +32,37 @@ const MONTHS_SHORT = [
   "Dec",
 ] as const;
 
-/** Last 6 month labels, e.g. ["Jun", "Jul", "Aug", "Sep", "Oct", "nov"]. */
-const lastSixMonths = (): string[] => {
+/** First day of each of the last 6 months, oldest to newest. */
+const lastSixMonthStarts = (): Date[] => {
   const now = new Date();
   return Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
-    return MONTHS_SHORT[d.getMonth()];
+    return d;
   });
 };
 
+/** Index of the month of `d` within `starts`, or -1 if outside the window. */
+const monthIndex = (starts: Date[], d: Date): number =>
+  starts.findIndex(
+    (start) =>
+      start.getFullYear() === d.getFullYear() &&
+      start.getMonth() === d.getMonth()
+  );
+
 /** Owner dashboard aggregates — bookings, equipment, earnings, and charts. */
 export const GetOwnerDashboard = async (
-  ownerId: string
+  ownerId: string,
+  token?: string
 ): Promise<OwnerDashboardStats> => {
   const [rentalsRes, equipmentsRes] = await Promise.all([
     fetch(
       `${API_BASE_URL}/owner/rentals?ownerId=${encodeURIComponent(ownerId)}`,
-      { cache: "no-store" }
+      {
+        cache: "no-store",
+        headers: token
+          ? { Authorization: `Bearer ${token}` }
+          : undefined,
+      }
     ),
     fetch(`${API_BASE_URL}/equipment`, { cache: "no-store" }),
   ]);
@@ -81,17 +97,32 @@ export const GetOwnerDashboard = async (
   ).length;
 
   // Monthly booking counts for the line chart (last 6 months).
-  const labels = lastSixMonths();
+  const monthStarts = lastSixMonthStarts();
+  const labels = monthStarts.map((d) => MONTHS_SHORT[d.getMonth()]);
   const counts = labels.map(() => 0);
   rentals.forEach((r) => {
     const d = new Date(r.bookingDate);
     if (Number.isNaN(d.getTime())) return;
-    const label = MONTHS_SHORT[d.getMonth()];
-    const idx = labels.indexOf(label);
+    const idx = monthIndex(monthStarts, d);
     if (idx !== -1) counts[idx] += 1;
   });
 
   const monthlyBookings = labels.map((month, i) => ({ month, count: counts[i] }));
+
+  // Monthly earnings (sum of paid rentals' totalAmount) for the earnings chart.
+  const earningsByMonth = labels.map(() => 0);
+  rentals.forEach((r) => {
+    if (String(r.paymentStatus).toLowerCase() !== "paid") return;
+    const d = new Date(r.bookingDate);
+    if (Number.isNaN(d.getTime())) return;
+    const idx = monthIndex(monthStarts, d);
+    if (idx !== -1) earningsByMonth[idx] += Number(r.totalAmount || 0);
+  });
+
+  const monthlyEarnings = labels.map((month, i) => ({
+    month,
+    amount: earningsByMonth[i],
+  }));
 
   // Newest bookings first for the recent list.
   const recentRentals = [...rentals].sort(
@@ -107,6 +138,7 @@ export const GetOwnerDashboard = async (
     confirmedCount,
     cancelledCount,
     monthlyBookings,
+    monthlyEarnings,
     recentRentals,
   };
 };
