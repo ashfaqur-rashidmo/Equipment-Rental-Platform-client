@@ -36,7 +36,7 @@ export default function OwnerDashboardSidebar() {
     <Sidebar>
       <SidebarHeader className="flex gap-4 border-b border-sidebar-border px-4 py-5">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link href="/" className="flex items-center gap-2.5 shrink-0">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-content shadow-sm">
             <Forklift className="h-4 w-4" aria-hidden />
           </span>
@@ -45,10 +45,10 @@ export default function OwnerDashboardSidebar() {
           </span>
         </Link>
 
-        {/* User profile — avatar, name, role */}
+        {/* User profile — avatar centered horizontally (x-axis), name after the image */}
         {user && (
-          <div className="flex items-center gap-3">
-            <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full border-2 border-sidebar-border">
+          <div className="flex-1 flex justify-center items-center gap-3 min-w-0">
+            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-sidebar-border">
               {user.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

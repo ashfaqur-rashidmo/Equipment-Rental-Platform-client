@@ -42,6 +42,12 @@ export function Navbar() {
   const user = session?.user;
   const logout = useLogOut();
 
+  const dashboardPath = user
+    ? DASHBOARD_ROUTES[
+        ((user as { role?: string }).role || "Customer") as UserRole
+      ].path
+    : "";
+
   const scrolled = useSyncExternalStore(
     subscribeScroll,
     getScrolled,
@@ -100,15 +106,11 @@ export function Navbar() {
           ) : user ? (
             /* Desktop avatar — links to the logged-in user's dashboard. */
             <Link
-              href={
-                DASHBOARD_ROUTES[
-                  ((user as { role?: string }).role || "Customer") as UserRole
-                ].path
-              }
-              className="hidden lg:block"
+              href={dashboardPath}
+              className="hidden lg:block flex items-center gap-2 px-3 py-1.5 rounded-full bg-base-200 hover:bg-base-300 border border-base-300/50 transition-colors"
               aria-label="Open dashboard"
             >
-              <div className="w-9 rounded-full ring ring-primary ring-offset-2 ring-offset-base-100">
+              <div className="w-10 h-10 shrink-0 rounded-full overflow-hidden border border-base-300/50">
                 {user.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -117,7 +119,7 @@ export function Navbar() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-primary text-sm font-semibold text-primary-content">
+                  <div className="flex h-full w-full items-center justify-center bg-primary text-xs font-semibold text-primary-content">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                 )}
