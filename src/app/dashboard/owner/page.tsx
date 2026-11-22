@@ -18,6 +18,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 import {
+  Area,
+  AreaChart,
   BarChart,
   Bar,
   CartesianGrid,
@@ -87,27 +89,6 @@ export default function OwnerDashboardPage() {
   };
 
   const handleRetry = () => setRetryCount((prev) => prev + 1);
-
-  /* ------------------------------------------------------------------ */
-  /* Booking Overview — animated line chart (last 6 months)             */
-  /* ------------------------------------------------------------------ */
-  const months = s.monthlyBookings.map((m) => m.month);
-  const values = s.monthlyBookings.map((m) => m.count);
-  const maxY = Math.max(4, ...values, 1);
-
-  const chartWidth = 360;
-  const chartHeight = 190;
-  const padding = { top: 16, right: 16, bottom: 34, left: 34 };
-  const plotW = chartWidth - padding.left - padding.right;
-  const plotH = chartHeight - padding.top - padding.bottom;
-
-  const xPoints = months.map((_, i) => padding.left + (i / Math.max(months.length - 1, 1)) * plotW);
-  const yPoints = values.map((v) => padding.top + plotH - (v / maxY) * plotH);
-
-  const linePath = values.reduce(
-    (d, v, i) => `${d}${i === 0 ? "M" : "L"}${xPoints[i]},${yPoints[i]}`,
-    ""
-  );
 
   return (
     <div className="min-h-screen bg-base-200 text-base-content">
@@ -421,97 +402,25 @@ export default function OwnerDashboardPage() {
                     Last 6 Months
                   </span>
                 </div>
-                <div className="h-[220px] flex items-center">
-                  <svg
-                    width={chartWidth}
-                    height={chartHeight}
-                    viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-full max-w-md"
-                  >
-                    <defs>
-                      <linearGradient id="lineGradient" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0%" stopColor="#d97706" stopOpacity="0.55" />
-                        <stop offset="100%" stopColor="#d97706" stopOpacity="0.05" />
-                      </linearGradient>
-                    </defs>
-
-                    {/* Y axis ticks */}
-                    {[0, 1, 2, 3, 4].map((tick) => {
-                      const y =
-                        padding.top + plotH - (tick / maxY) * plotH;
-                      return (
-                        <g key={tick}>
-                          <line
-                            x1={padding.left - 6}
-                            x2={padding.left}
-                            y1={y}
-                            y2={y}
-                            stroke="#cbd5e1"
-                            strokeWidth={1}
-                          />
-                          <text
-                            x={padding.left - 10}
-                            y={y + 4}
-                            fontSize={11}
-                            fill="#64748b"
-                            textAnchor="end"
-                          >
-                            {tick}
-                          </text>
-                        </g>
-                      );
-                    })}
-
-                    {/* X axis labels */}
-                    {months.map((m, i) => (
-                      <text
-                        key={m}
-                        x={xPoints[i]}
-                        y={padding.top + plotH + 20}
-                        fontSize={12}
-                        fill="#94a3b8"
-                        textAnchor="middle"
-                      >
-                        {m}
-                      </text>
-                    ))}
-
-                    {/* Area fill */}
-                    <path
-                      d={`${linePath} L${xPoints[xPoints.length - 1]},${padding.top + plotH} L${xPoints[0]},${padding.top + plotH} Z`}
-                      fill="url(#lineGradient)"
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart data={s.monthlyBookings}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
+                    <XAxis dataKey="month" tick={{ fontSize: 11, fill: "currentColor" }} stroke="transparent" />
+                    <YAxis tick={{ fontSize: 11, fill: "currentColor" }} stroke="transparent" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "var(--color-base-100)",
+                        borderColor: "var(--color-base-300)",
+                        borderRadius: "0.5rem",
+                      }}
+                      labelStyle={{ color: "var(--color-base-content)" }}
+                      formatter={(value) =>
+                        value == null ? "" : Number(value).toLocaleString("en-US")
+                      }
                     />
-                    {/* Animated line */}
-                    <motion.path
-                      d={linePath}
-                      stroke="#d97706"
-                      strokeWidth={2.5}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      style={{ strokeDasharray: 600, strokeDashoffset: 600 }}
-                      initial={{ strokeDashoffset: 600 }}
-                      animate={{ strokeDashoffset: 0 }}
-                      transition={{ duration: 1.2, ease: "easeInOut" }}
-                    />
-                    {/* Animated dots */}
-                    {xPoints.map((x, i) => (
-                      <motion.circle
-                        key={i}
-                        cx={x}
-                        cy={yPoints[i]}
-                        r={4}
-                        fill="#d97706"
-                        stroke="#ffffff"
-                        strokeWidth={2}
-                        initial={{ opacity: 0, scale: 0 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.6 + i * 0.08, duration: 0.4 }}
-                      />
-                    ))}
-                  </svg>
-                </div>
+                    <Area type="monotone" dataKey="count" stroke="#d97706" strokeWidth={2.5} fill="#d97706" fillOpacity={0.15} />
+                  </AreaChart>
+                </ResponsiveContainer>
               </motion.div>
 
               {/* Monthly Earnings */}
@@ -526,7 +435,7 @@ export default function OwnerDashboardPage() {
                   <BarChart
                     data={s.monthlyEarnings.map((m) => ({
                       month: m.month,
-                      amount: formatPrice(m.amount),
+                      amount: m.amount,
                     }))}
                   >
                     <CartesianGrid
@@ -550,6 +459,9 @@ export default function OwnerDashboardPage() {
                         borderRadius: "0.5rem",
                       }}
                       labelStyle={{ color: "var(--color-base-content)" }}
+                      formatter={(value) =>
+                        value == null ? "" : formatPrice(Number(value))
+                      }
                     />
                     <Bar
                       dataKey="amount"

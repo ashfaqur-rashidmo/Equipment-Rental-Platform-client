@@ -85,6 +85,7 @@ export default function AdminDashboardPage() {
   const token = session?.session?.token;
 
   const [stats, setStats] = useState<AdminStat[]>([]);
+  const [chartData, setChartData] = useState<{ label: string; value: number; fill: string }[]>([]);
   const [supportCounts, setSupportCounts] = useState({
     users: 0,
     equipment: 0,
@@ -143,6 +144,16 @@ export default function AdminDashboardPage() {
         (item) => String(item.status || "").toLowerCase() === "pending"
       ).length;
 
+      // Keep raw numbers for the chart; format only for stat-card display.
+      const rawStats = [
+        { label: "Total Users", value: userList.length, fill: "var(--color-primary)" },
+        { label: "Equipment Listings", value: equipmentList.length, fill: "var(--color-success)" },
+        { label: "Pending Approvals", value: pendingApprovals, fill: "var(--color-warning)" },
+        { label: "Total Rentals", value: rentalList.length, fill: "var(--color-base-content)" },
+        { label: "Completed Rentals", value: completedRentals, fill: "var(--color-success)" },
+        { label: "Total Revenue", value: totalRevenue, fill: "var(--color-primary)" },
+      ] as const;
+
       setStats([
         {
           label: "Total Users",
@@ -188,6 +199,15 @@ export default function AdminDashboardPage() {
         },
       ]);
 
+      // Chart uses raw numeric values only (revenue as a number, not the formatted string).
+      setChartData(
+        rawStats.map((s) => ({
+          label: s.label,
+          value: s.value,
+          fill: s.fill,
+        }))
+      );
+
       setMonthlyBookings(monthlyBookings);
     } catch (err) {
       console.error("Fetch stats error:", err);
@@ -207,12 +227,6 @@ export default function AdminDashboardPage() {
     // authorization, so firing immediately would 401 every time.
     if (token) void (async () => { await loadStats(); })();
   }, [token]);
-
-  const chartData = stats.map((stat) => ({
-    label: stat.label,
-    value: stat.value,
-    fill: stat.fill,
-  }));
 
   return (
     <div className="mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-6">
