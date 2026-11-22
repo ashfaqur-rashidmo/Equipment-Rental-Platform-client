@@ -1,6 +1,6 @@
 # Equipment Rental Platform — Client
 
-**Live URL:** _(add your deployed frontend link here, e.g. https://your-app.vercel.app)_
+**Live URL:** _https://equipment-rental-platform-client-mu.vercel.app_
 
 ## Purpose
 
