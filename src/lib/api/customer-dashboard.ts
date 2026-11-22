@@ -86,7 +86,9 @@ export const GetCustomerDashboard = async (
   const completedRentals = rentals.filter(
     (r) =>
       String(r.paymentStatus).toLowerCase() === "paid" &&
-      String(r.bookingStatus).toLowerCase() === "confirmed"
+      ["confirmed", "completed"].includes(
+        String(r.bookingStatus).toLowerCase()
+      )
   ).length;
   const totalSpent = rentals
     .filter((r) => String(r.paymentStatus).toLowerCase() === "paid")

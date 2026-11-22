@@ -24,7 +24,8 @@ const BookingCard = ({ rental }: BookingCardProps) => {
                 </div>
                 <Badge
                   variant={
-                    rental.bookingStatus === "Confirmed"
+                    rental.bookingStatus === "Confirmed" ||
+                    rental.bookingStatus === "Completed"
                       ? "success"
                       : rental.bookingStatus === "Cancelled"
                         ? "error"

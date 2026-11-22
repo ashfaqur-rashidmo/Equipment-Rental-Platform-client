@@ -8,6 +8,7 @@ const paymentVariants: Record<string, string> = {
 
 const bookingVariants: Record<string, string> = {
   Confirmed: "badge-success",
+  Completed: "badge-success",
   Pending: "badge-warning",
   Cancelled: "badge-error",
 };
@@ -19,7 +20,7 @@ export const PaymentStatusBadge = ({ status }: { status: string }) => (
   </Badge>
 );
 
-/** Confirmed / Pending / Cancelled badge. */
+/** Confirmed / Completed / Pending / Cancelled badge. */
 export const BookingStatusBadge = ({ status }: { status: string }) => (
   <Badge className={bookingVariants[status] || "badge-outline"}>
     {status || "Unknown"}

@@ -9,6 +9,7 @@ export interface OwnerDashboardStats {
   totalEarnings: number;
   pendingCount: number;
   confirmedCount: number;
+  completedCount: number;
   cancelledCount: number;
   /** Last 6 months of booking counts for the line chart. */
   monthlyBookings: { month: string; count: number }[];
@@ -92,6 +93,9 @@ export const GetOwnerDashboard = async (
   const confirmedCount = rentals.filter(
     (r) => String(r.bookingStatus).toLowerCase() === "confirmed"
   ).length;
+  const completedCount = rentals.filter(
+    (r) => String(r.bookingStatus).toLowerCase() === "completed"
+  ).length;
   const cancelledCount = rentals.filter(
     (r) => String(r.bookingStatus).toLowerCase() === "cancelled"
   ).length;
@@ -136,6 +140,7 @@ export const GetOwnerDashboard = async (
     totalEarnings,
     pendingCount,
     confirmedCount,
+    completedCount,
     cancelledCount,
     monthlyBookings,
     monthlyEarnings,

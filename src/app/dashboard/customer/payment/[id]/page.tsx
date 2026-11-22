@@ -222,7 +222,8 @@ export default function PaymentPage({searchParams}: {searchParams: {id: string}}
                   <dd>
                     <Badge
                       className={
-                        rental.bookingStatus === "Confirmed"
+                        rental.bookingStatus === "Confirmed" ||
+                        rental.bookingStatus === "Completed"
                           ? "badge-success"
                           : rental.bookingStatus === "Cancelled"
                             ? "badge-error"

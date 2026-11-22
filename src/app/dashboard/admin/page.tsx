@@ -119,8 +119,10 @@ export default function AdminDashboardPage() {
       });
 
       // Completed rentals, total revenue, and monthly booking statistics.
-      const completedRentals = rentalList.filter(
-        (r) => String(r.bookingStatus || "").toLowerCase() === "confirmed"
+      const completedRentals = rentalList.filter((r) =>
+        ["confirmed", "completed"].includes(
+          String(r.bookingStatus || "").toLowerCase()
+        )
       ).length;
       const totalRevenue = rentalList
         .filter((r) => String(r.paymentStatus || "").toLowerCase() === "paid")

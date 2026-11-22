@@ -10,6 +10,7 @@ import {
   HardHat,
   Clock,
   CheckCircle2,
+  CheckCheck,
   XCircle,
   Loader2,
   AlertTriangle,
@@ -82,6 +83,7 @@ export default function OwnerDashboardPage() {
     totalEarnings: 0,
     pendingCount: 0,
     confirmedCount: 0,
+    completedCount: 0,
     cancelledCount: 0,
     monthlyBookings: [],
     monthlyEarnings: [],
@@ -342,7 +344,7 @@ export default function OwnerDashboardPage() {
             </div>
 
             {/* ===== Booking status pills ===== */}
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div
                 className={cn(
                   "rounded-xl border px-4 py-3 flex items-center justify-between",
@@ -370,6 +372,20 @@ export default function OwnerDashboardPage() {
                   <p className="text-sm font-semibold">Confirmed</p>
                 </div>
                 <span className="text-sm font-bold">{s.confirmedCount}</span>
+              </div>
+              <div
+                className={cn(
+                  "rounded-xl border px-4 py-3 flex items-center justify-between",
+                  "bg-success/10 text-success border-success/20"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-full bg-success flex items-center justify-center text-white text-[10px]">
+                    <CheckCheck className="h-3 w-3" />
+                  </div>
+                  <p className="text-sm font-semibold">Completed</p>
+                </div>
+                <span className="text-sm font-bold">{s.completedCount}</span>
               </div>
               <div
                 className={cn(
@@ -542,6 +558,7 @@ export default function OwnerDashboardPage() {
                   <div className="w-full text-left space-y-1.5">
                     {[
                       { label: "Confirmed", color: "bg-blue-500", count: s.confirmedCount },
+                      { label: "Completed", color: "bg-success", count: s.completedCount },
                       { label: "Pending", color: "bg-warning", count: s.pendingCount },
                       { label: "Cancelled", color: "bg-error", count: s.cancelledCount },
                     ].map((item) => (
@@ -641,7 +658,8 @@ export default function OwnerDashboardPage() {
                             <td>
                               <Badge
                                 variant={
-                                  rental.bookingStatus === "Confirmed"
+                                  rental.bookingStatus === "Confirmed" ||
+                                  rental.bookingStatus === "Completed"
                                     ? "success"
                                     : rental.bookingStatus === "Cancelled"
                                       ? "error"

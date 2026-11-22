@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Package, RefreshCw } from "lucide-react";
+import { CalendarCheck, Package, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import Pagination from "@/components/ui/pagination";
 
 const PAGE_SIZE = 10;
@@ -57,6 +58,7 @@ export default function AllRentalsPage() {
   const [page, setPage] = useState(1);
   const [rentals, setRentals] = useState<Rental[]>([]);
   const [loading, setLoading] = useState(true);
+  const [runningSweep, setRunningSweep] = useState(false);
   const [error, setError] = useState("");
 
   // Lookup data used to resolve the owner of each equipment listing.
@@ -101,6 +103,41 @@ export default function AllRentalsPage() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Run the overdue-booking sweep on demand (same job as the server cron).
+  const runStatusSweep = async () => {
+    if (!API_BASE_URL || !token) {
+      toast.error("Admin session is required to run this action.");
+      return;
+    }
+
+    setRunningSweep(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/cron/update-booking-status`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to update booking statuses.");
+      }
+
+      toast.success(
+        `Completed ${data.updated ?? 0} overdue booking(s); ` +
+          `${data.restocked ?? 0} equipment restocked.`
+      );
+      await fetchRentals();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Unable to update booking statuses."
+      );
+    } finally {
+      setRunningSweep(false);
     }
   };
 
@@ -244,7 +281,7 @@ export default function AllRentalsPage() {
       )}
 
       {/* Refresh */}
-      <div className="mb-5">
+      <div className="mb-5 flex flex-wrap gap-2">
         <button
           type="button"
           onClick={fetchRentals}
@@ -255,6 +292,18 @@ export default function AllRentalsPage() {
             className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
           />
           Refresh
+        </button>
+        <button
+          type="button"
+          onClick={runStatusSweep}
+          disabled={runningSweep || loading}
+          className="btn btn-primary btn-sm"
+          title="Mark bookings whose rental end date has passed as Completed"
+        >
+          <CalendarCheck
+            className={`h-4 w-4 ${runningSweep ? "animate-spin" : ""}`}
+          />
+          {runningSweep ? "Updating..." : "Update overdue bookings"}
         </button>
       </div>
 
