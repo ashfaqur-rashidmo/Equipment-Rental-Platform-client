@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Equipment Rental Platform — Client
 
-## Getting Started
+**Live URL:** _(add your deployed frontend link here, e.g. https://your-app.vercel.app)_
 
-First, run the development server:
+## Purpose
+
+Frontend of an equipment rental marketplace. Equipment owners list their
+equipment for rent, customers browse/book/pay for a rental period, and admins
+manage users, equipment and rentals. Built with Next.js 16 App Router,
+TypeScript, Tailwind CSS v4, DaisyUI and shadcn/ui. The Express + MongoDB API
+lives in the separate `Equipment-Rental-Platform-server` repository.
+
+## Key features
+
+- **Public pages** — Home with hero/banner, 6 approved featured equipment,
+  categories, why-choose-us, reviews and extra sections; All Equipment with
+  server-side search, filters (category, rental type, price, availability) and
+  sorting; About, Contact and How It Works.
+- **Authentication** — email/password and Google sign-in through BetterAuth
+  with a JWT plugin; role-based access for `Customer`, `Owner` and `Admin`.
+- **Customer dashboard** — My Rentals, Favorites, Profile, booking details and
+  Stripe payment pages.
+- **Owner dashboard** — Add Equipment (ImgBB image upload), My Equipment,
+  My Equipment Rental, Earnings with charts, and Profile.
+- **Admin dashboard** — All Users, All Equipment (approve/reject), All Rentals,
+  platform analytics with charts, and Profile.
+- **Booking & payment** — date range and quantity selection, server-calculated
+  total, stock check, Stripe Checkout, transaction recorded and booking marked
+  paid/confirmed on success.
+- **Extras** — dark/light theme toggle saved in local storage, loading/error/
+  not-found pages, responsive layouts for mobile/tablet/desktop, Framer Motion
+  animations, and an admin button to run the overdue-booking cron job manually.
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Other commands:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build      # production build
+npm run start      # production server
+npm run lint       # ESLint
+npx tsc --noEmit   # typecheck
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment variables
 
-## Learn More
+Create a `.env` file (never commit real secrets):
 
-To learn more about Next.js, take a look at the following resources:
+```env
+NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
+NEXT_PUBLIC_IMGBB_API_KEY=<your imgbb key>
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=<your stripe publishable key>
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+BETTER_AUTH_SECRET=<your secret>
+BETTER_AUTH_DB_URI=<your mongodb connection string>
+STRIPE_SECRET_KEY=<your stripe secret key>
+BETTER_AUTH_GOOGLE_CLIENT_ID=<your google client id>
+BETTER_AUTH_GOOGLE_CLIENT_SECRET=<your google client secret>
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## npm packages used
 
-## Deploy on Vercel
+**Dependencies:** `@base-ui/react`, `@better-auth/mongo-adapter`,
+`@stripe/stripe-js`, `better-auth`, `class-variance-authority`, `cn`,
+`es-toolkit`, `framer-motion`, `lucide-react`, `mongodb`, `next`, `react`,
+`react-dom`, `recharts`, `shadcn`, `sonner`, `stripe`, `tw-animate-css`,
+`node-cron`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Dev dependencies:** `@tailwindcss/turbopack`, `@types/node`, `@types/react`,
+`@types/react-dom`, `babel-plugin-react-compiler`, `daisyui`, `eslint`,
+`eslint-config-next`, `tailwindcss`, `typescript`.

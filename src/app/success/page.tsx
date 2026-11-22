@@ -43,7 +43,8 @@ const CONTENT: Record<
 
 /**
  * Stripe redirects here after checkout. The session is verified server-side
- * and the booking is marked as paid — refreshing the page is safe.
+ * and the booking is marked paid/confirmed with its transaction recorded —
+ * refreshing the page is safe.
  */
 export default async function SuccessPage({
   searchParams,
@@ -63,30 +64,36 @@ export default async function SuccessPage({
       if (checkout.payment_status === "paid") {
         status = "paid";
 
-        // Mark the booking as paid (idempotent — a refresh changes nothing).
+        // Mark the booking paid/confirmed and save the transaction in the
+        // payments collection. The endpoint is idempotent — a refresh is safe.
         const rentalId = String(
           checkout.client_reference_id || checkout.metadata?.rentalId || ""
         );
 
         if (rentalId) {
           const token = (await getSession())?.session?.token;
-          const patchRes = await fetch(
-            `${API_BASE_URL}/rentals/${encodeURIComponent(rentalId)}`,
+          const recordRes = await fetch(
+            `${API_BASE_URL}/api/payments/record`,
             {
-              method: "PATCH",
+              method: "POST",
               headers: {
                 "Content-Type": "application/json",
                 ...(token ? { Authorization: `Bearer ${token}` } : {}),
               },
-              body: JSON.stringify({ paymentStatus: "Paid" }),
+              body: JSON.stringify({
+                rentalId,
+                stripeSessionId: session_id,
+                amount,
+                currency: checkout.currency || "bdt",
+              }),
               cache: "no-store",
             }
           );
 
-          if (!patchRes.ok) {
+          if (!recordRes.ok) {
             console.error(
-              `Failed to mark rental ${rentalId} as paid:`,
-              patchRes.status
+              `Failed to record payment for rental ${rentalId}:`,
+              recordRes.status
             );
           }
         }
