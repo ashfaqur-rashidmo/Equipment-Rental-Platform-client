@@ -39,7 +39,10 @@ const AllEquipmentsPage = async ({ searchParams }: PageProps) => {
   const [equipments, categoryRows] = await Promise.all([
     // The equipment list is optional for the listing page — fall back to
     // an empty list when the API is unavailable.
-    GetEquipments(query).catch(() => [] as EquipmentItem[]),
+    GetEquipments(query).catch((error) => {
+      console.error("Failed to load equipment listing:", error);
+      return [] as EquipmentItem[];
+    }),
     GetEquipmentCategories(facetQuery),
   ]);
 

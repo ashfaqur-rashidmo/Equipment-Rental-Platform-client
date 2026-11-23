@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { siteConfig } from "@/config/site";
 import {
   BadgeCheck,
-  Building2,
   CalendarClock,
   DollarSign,
   Forklift,
@@ -197,18 +197,18 @@ export default function AboutPage() {
           {siteConfig.name}.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <a
+          <Link
             href="/all-equipment"
             className="btn btn-primary btn-lg"
           >
             Browse Equipment
-          </a>
-          <a
+          </Link>
+          <Link
             href="/register"
             className="btn btn-outline btn-lg border-primary text-primary-content hover:bg-primary"
           >
             List Your Equipment
-          </a>
+          </Link>
         </div>
       </div>
     </section>
