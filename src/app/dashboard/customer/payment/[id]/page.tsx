@@ -27,10 +27,10 @@ const paymentStatusVariant: Record<string, string> = {
   Failed: "badge-error",
 };
 
-export default function PaymentPage({searchParams}: {searchParams: {id: string}}) {
+export default function PaymentPage() {
 
   const params = useParams<{ id: string }>();
-  const rentalId = params.id || searchParams.id;
+  const rentalId = params.id;
 
   // A failed checkout start comes back as ?error=... (see /api/checkout-sessions).
   const payError = useSearchParams().get("error");

@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import { auth } from "@/lib/auth";
-
 // Private routes (per the assignment requirements) — they require a
 // logged-in user and redirect to the login page when the session is gone.
 // The Equipment Details Page (/equipment/:id) is public.
@@ -20,7 +18,15 @@ function isPrivateRoute(pathname: string): boolean {
 }
 
 export default async function proxy(request: NextRequest) {
-  if (isPrivateRoute(request.nextUrl.pathname)) {
+  if (!isPrivateRoute(request.nextUrl.pathname)) {
+    // Public pages and static assets must never touch the database.
+    return NextResponse.next();
+  }
+
+  try {
+    // Loaded lazily so a cold start on a public/static request does not open
+    // a MongoDB connection (that caused the Vercel connection storm).
+    const { auth } = await import("@/lib/auth");
     const result = await auth.api.getSession({
       headers: request.headers,
     });
@@ -28,6 +34,11 @@ export default async function proxy(request: NextRequest) {
     if (!result?.session) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
+  } catch (error) {
+    // A database hiccup must not turn the page into a 500. Send the user to
+    // login, where the session can be established again.
+    console.error("Session check failed:", error);
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return NextResponse.next();

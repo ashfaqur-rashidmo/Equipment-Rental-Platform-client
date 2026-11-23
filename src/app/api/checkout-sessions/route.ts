@@ -11,9 +11,10 @@ import { getSession } from "@/lib/core/server";
  */
 export async function POST(request: Request) {
   const headersList = await headers();
+  const forwardedProto = headersList.get("x-forwarded-proto") || "http";
   const origin =
     headersList.get("origin") ??
-    `http://${headersList.get("host") ?? "localhost:3000"}`;
+    `${forwardedProto}://${headersList.get("host") ?? "localhost:3000"}`;
 
   // The Pay button posts the booking id as form data.
   let rentalId = "";
