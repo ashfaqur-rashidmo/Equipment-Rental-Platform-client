@@ -33,11 +33,70 @@ const AllEquipmentClient = ({
   const pathname = usePathname();
   const activeCount = countActiveFilters(searchParams);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [sort, setSort] = useState(searchParams.get("sort") || "recent");
+  const [page, setPage] = useState(1);
+
+  // The API returns the full collection, so search, filters and price
+  // sorting are applied here against the current URL search params.
+  const search = (searchParams.get("search") || "").trim().toLowerCase();
+  const category = searchParams.get("category") || "";
+  const rentalType = searchParams.get("rentalType") || "";
+  const minPriceParam = searchParams.get("minPrice");
+  const maxPriceParam = searchParams.get("maxPrice");
+  const minPrice = Number(minPriceParam);
+  const maxPrice = Number(maxPriceParam);
+  const availableOnly = searchParams.get("available") === "1";
+  const sort = searchParams.get("sort") || "recent";
+
+  const filteredEquipments = equipments.filter((item) => {
+    if (
+      search &&
+      !`${item.name || ""} ${item.location || ""}`.toLowerCase().includes(search)
+    ) {
+      return false;
+    }
+
+    if (category) {
+      // Match the leading word so "Photography" also matches
+      // "Photography Equipment" values stored in the database.
+      const leadingWord =
+        category.trim().split(/\s+/)[0]?.toLowerCase() || "";
+      if (!(item.category || "").trim().toLowerCase().startsWith(leadingWord)) {
+        return false;
+      }
+    }
+
+    if (
+      rentalType &&
+      (item.rentalType || "").toLowerCase() !== rentalType.toLowerCase()
+    ) {
+      return false;
+    }
+
+    if (minPriceParam || maxPriceParam) {
+      const price = Number(item.rentalPrice);
+      if (!Number.isFinite(price)) return false;
+      if (minPriceParam && price < minPrice) return false;
+      if (maxPriceParam && price > maxPrice) return false;
+    }
+
+    if (availableOnly && !(Number(item.availableQuantity) > 0)) return false;
+
+    return true;
+  });
+
+  const sortedEquipments = [...filteredEquipments];
+  if (sort === "priceLow") {
+    sortedEquipments.sort(
+      (a, b) => Number(a.rentalPrice) - Number(b.rentalPrice)
+    );
+  } else if (sort === "priceHigh") {
+    sortedEquipments.sort(
+      (a, b) => Number(b.rentalPrice) - Number(a.rentalPrice)
+    );
+  }
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    setSort(value);
 
     const params = new URLSearchParams(searchParams.toString());
     if (value === "recent") params.delete("sort");
@@ -45,11 +104,10 @@ const AllEquipmentClient = ({
 
     router.push(`${pathname}?${params.toString()}`);
   };
-  const [page, setPage] = useState(1);
 
-  const totalPages = Math.max(1, Math.ceil(equipments.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(sortedEquipments.length / PAGE_SIZE));
   const safePage = Math.min(Math.max(page, 1), totalPages);
-  const pageItems = equipments.slice(
+  const pageItems = sortedEquipments.slice(
     (safePage - 1) * PAGE_SIZE,
     safePage * PAGE_SIZE
   );
@@ -141,13 +199,13 @@ const AllEquipmentClient = ({
               </div>
 
               <p className="ml-auto text-sm text-base-content/60">
-                {equipments.length} equipment
-                {equipments.length !== 1 ? "s" : ""} found
+                {sortedEquipments.length} equipment
+                {sortedEquipments.length !== 1 ? "s" : ""} found
               </p>
             </div>
 
             {/* Empty State */}
-            {equipments.length === 0 && (
+            {sortedEquipments.length === 0 && (
               <div className="rounded-box border border-base-300 bg-base-100 p-12 text-center">
                 <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-base-200">
                   <SearchX size={26} className="text-base-content/40" />
@@ -168,12 +226,12 @@ const AllEquipmentClient = ({
             )}
 
             {/* Equipment Grid */}
-            {equipments.length > 0 && (
+            {sortedEquipments.length > 0 && (
               <EquipmentGrid equipments={pageItems} />
             )}
 
             <Pagination
-              total={equipments.length}
+              total={sortedEquipments.length}
               pageSize={PAGE_SIZE}
               page={safePage}
               onPageChange={setPage}

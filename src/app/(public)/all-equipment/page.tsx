@@ -17,33 +17,16 @@ interface PageProps {
 const AllEquipmentsPage = async ({ searchParams }: PageProps) => {
   const params = await searchParams;
 
-  // Convert searchParams into a query string
-  const urlSearch = new URLSearchParams();
-
-  Object.entries(params).forEach(([key, value]) => {
-    if (typeof value === "string") {
-      urlSearch.set(key, value);
-    } else if (Array.isArray(value)) {
-      value.forEach((item) => urlSearch.append(key, item));
-    }
-  });
-
-  const query = urlSearch.toString();
-
-  // Facet counts ignore the `category` param itself, so the category
-  // list keeps every option while one of them is selected.
-  const facetSearch = new URLSearchParams(urlSearch);
-  facetSearch.delete("category");
-  const facetQuery = facetSearch.toString();
-
+  // The API returns the full collection; search/filters are applied in
+  // AllEquipmentClient using the current URL search params.
   const [equipments, categoryRows] = await Promise.all([
     // The equipment list is optional for the listing page — fall back to
     // an empty list when the API is unavailable.
-    GetEquipments(query).catch((error) => {
+    GetEquipments().catch((error) => {
       console.error("Failed to load equipment listing:", error);
       return [] as EquipmentItem[];
     }),
-    GetEquipmentCategories(facetQuery),
+    GetEquipmentCategories(),
   ]);
 
   // Fall back to the static site categories if the API is unavailable.
@@ -53,7 +36,9 @@ const AllEquipmentsPage = async ({ searchParams }: PageProps) => {
   return (
     <AllEquipmentClient
       equipments={equipments}
-      initialSearch={urlSearch.get("search") || ""}
+      initialSearch={
+        typeof params.search === "string" ? params.search : ""
+      }
       categories={categories}
     />
   );
