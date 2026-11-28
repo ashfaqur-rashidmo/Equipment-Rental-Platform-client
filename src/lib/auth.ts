@@ -58,6 +58,7 @@ export const auth = betterAuth({
       }
     },
     sendOnSignIn: true,
+    sendOnSignUp: true,
   },
 
   plugins: [jwt()],
