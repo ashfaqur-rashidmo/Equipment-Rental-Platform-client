@@ -1,7 +1,8 @@
-import { betterAuth } from "better-auth";
+import { betterAuth, type User } from "better-auth";
 import { jwt } from "better-auth/plugins";
 import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
+import { sendEmail } from "./email";
 
 const uri = process.env.BETTER_AUTH_DB_URI;
 
@@ -9,18 +10,7 @@ if (!uri) {
   throw new Error("BETTER_AUTH_DB_URI is not configured");
 }
 
-/**
- * A serverless instance is reused between requests. Opening a brand new
- * MongoClient on every module evaluation (which also happened on every
- * middleware/static-asset request) exhausts the Atlas connection pool and
- * leaves the topology closed — surfaced on Vercel as
- * MongoServerSelectionError followed by MongoTopologyClosedError and an
- * "Internal Server Error" on every dashboard page.
- *
- * Keep exactly one connected client per instance and reuse it. If a cold
- * start fails to connect, drop the cached promise so the next invocation
- * can try again instead of reusing a dead topology.
- */
+
 const globalForAuth = globalThis as unknown as {
   authMongoClientPromise?: Promise<MongoClient>;
 };
@@ -51,7 +41,25 @@ export const auth = betterAuth({
 
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: true,
   },
+  emailVerification: {
+    // BetterAuth calls this when it needs to send a verification link.
+    sendVerificationEmail: async ({ user, url }: { user: User; url: string }) => {
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: "Verify your email",
+          text: `Click this link to verify your email: ${url}`,
+        });
+      } catch (error) {
+        // A mail failure must not break registration or sign-in.
+        console.error("Could not send verification email:", error);
+      }
+    },
+    sendOnSignIn: true,
+  },
+
   plugins: [jwt()],
   session: {
     cookieCache: {

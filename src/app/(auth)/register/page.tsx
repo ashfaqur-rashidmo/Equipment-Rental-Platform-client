@@ -15,7 +15,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 
@@ -35,8 +34,7 @@ const perks = [
 ];
 
 export default function RegisterPage() {
-  const router = useRouter();
-
+  const [sentTo, setSentTo] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -136,6 +134,14 @@ export default function RegisterPage() {
       return;
     }
 
+    // Email format validation (same rule as the server).
+    // noValidate on the form lets this toast show instead of the browser popup.
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
     // Password validation
     if (password.length < 6) {
       toast.error("Password must be at least 6 characters.");
@@ -187,6 +193,8 @@ export default function RegisterPage() {
         password,
         image: imageUrl.trim() || undefined,
         role,
+        // After clicking the email link, the user lands back on Login.
+        callbackURL: "/login?verified=1",
       });
 
       if (error) {
@@ -194,9 +202,8 @@ export default function RegisterPage() {
         return;
       }
 
-      toast.success("Account created successfully!");
-
-      router.push("/login");
+      setSentTo(email);
+      toast.success("Account created! Check your inbox for the verification link.");
     } catch (error) {
       console.error("Registration error:", error);
 
@@ -273,15 +280,36 @@ export default function RegisterPage() {
             <ImagePlus className="h-6 w-6" aria-hidden />
           </span>
 
-          <h1 className="text-3xl font-bold tracking-tight text-base-content">
-            Create your account
-          </h1>
+          {sentTo ? (
+            <>
+              <h1 className="text-3xl font-bold tracking-tight text-base-content">
+                Check your email
+              </h1>
 
-          <p className="mt-2 text-sm text-base-content/60">
-            Join EquipRent and get the equipment you need for your projects.
-          </p>
+              <p className="mt-2 text-sm text-base-content/60">
+                We sent a verification link to{" "}
+                <strong className="text-base-content">{sentTo}</strong>. Open it
+                to activate your account before logging in.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-3xl font-bold tracking-tight text-base-content">
+                Create your account
+              </h1>
 
-          <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
+              <p className="mt-2 text-sm text-base-content/60">
+                Join EquipRent and get the equipment you need for your projects.
+              </p>
+            </>
+          )}
+
+          {!sentTo && (
+          <form
+            className="mt-8 space-y-4"
+            onSubmit={handleSubmit}
+            noValidate
+          >
 
             {/* Name */}
             <div>
@@ -342,7 +370,7 @@ export default function RegisterPage() {
   >
     <option value="Customer">Customer - Rent equipment</option>
     <option value="Owner">Equipment Owner - Rent out equipment</option>
-    <option value="Admin">Admin - Manage platform</option>
+    {/* <option value="Admin">Admin - Manage platform</option> */}
   </select>
 </div>
 
@@ -465,17 +493,50 @@ export default function RegisterPage() {
               {loading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
+          )}
 
-          {/* Login Link */}
-          <p className="mt-8 text-center text-sm text-base-content/60">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="font-semibold text-primary link-hover"
-            >
-              Login
-            </Link>
-          </p>
+          {sentTo && (
+            <div className="mt-8 space-y-4">
+              <p className="rounded-box bg-warning/10 p-4 text-sm text-warning">
+                Didn&apos;t receive it? Check your spam folder, then resend the
+                link. Without verifying, you cannot log in.
+              </p>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  const { error } = await authClient.sendVerificationEmail({
+                    email: sentTo,
+                    callbackURL: "/login?verified=1",
+                  });
+                  if (error) {
+                    toast.error(error.message || "Could not resend email.");
+                  } else {
+                    toast.success("Verification email sent again.");
+                  }
+                }}
+                className="btn btn-outline btn-block"
+              >
+                Resend verification email
+              </button>
+
+              <Link href="/login" className="btn btn-primary btn-block">
+                Go to Login
+              </Link>
+            </div>
+          )}
+
+          {!sentTo && (
+            <p className="mt-8 text-center text-sm text-base-content/60">
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="font-semibold text-primary link-hover"
+              >
+                Login
+              </Link>
+            </p>
+          )}
         </div>
       </motion.div>
     </div>

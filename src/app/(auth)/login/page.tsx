@@ -17,10 +17,14 @@ export default function LoginPage() {
     rawRedirect.startsWith("/") &&
     !rawRedirect.startsWith("//");
   const redirectTo = isSafeRedirect && rawRedirect ? rawRedirect : "/";
-  const [isLoading, setIsLoading] = useState(false)
+  const emailVerified = searchParams.get("verified") === "1";
 
-  
-const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [needsVerification, setNeedsVerification] = useState(false);
+
+  const router = useRouter();
 
 const HandleSignIn = async (
   e: React.FormEvent<HTMLFormElement>
@@ -30,8 +34,11 @@ const HandleSignIn = async (
   const form = e.currentTarget;
   const formData = new FormData(form);
 
-  const email = String(formData.get("email") ?? "");
+  const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+
+  setLoginEmail(email);
+  setNeedsVerification(false);
 
   if (!email || !password) {
     toast.error("Please enter your email and password.");
@@ -50,7 +57,19 @@ const HandleSignIn = async (
     });
 
     if (error) {
-      toast.error(error.message || "Login failed.");
+      const message = error.message || "Login failed.";
+
+      if (
+        error.code === "EMAIL_NOT_VERIFIED" ||
+        /verif/i.test(message)
+      ) {
+        setNeedsVerification(true);
+        toast.error(
+          "Your email is not verified yet. Check your inbox or resend the link below."
+        );
+      } else {
+        toast.error(message);
+      }
       return;
     }
 
@@ -80,6 +99,32 @@ const HandleSignIn = async (
   }
 };
 
+// Send a fresh verification link to the email typed in the form.
+const handleResendVerification = async () => {
+  if (!loginEmail) {
+    toast.error("Enter your email above first.");
+    return;
+  }
+
+  setResending(true);
+  try {
+    const { error } = await authClient.sendVerificationEmail({
+      email: loginEmail,
+      callbackURL: "/login?verified=1",
+    });
+
+    if (error) {
+      toast.error(error.message || "Could not resend the verification email.");
+    } else {
+      toast.success("Verification email sent. Check your inbox.");
+    }
+  } catch (error) {
+    console.error("Resend verification error:", error);
+    toast.error("Could not resend the verification email.");
+  } finally {
+    setResending(false);
+  }
+};
 
 const handleGoogleSignIn = async () => {
   try {
@@ -115,6 +160,14 @@ const handleGoogleSignIn = async () => {
       <p className="mt-2 text-sm text-base-content/60">
         Login to book equipment, manage rentals and your dashboard.
       </p>
+
+      {(emailVerified || needsVerification) && (
+        <div className="mt-4 rounded-box border border-success/30 bg-success/10 p-3 text-sm text-success">
+          {emailVerified
+            ? "Email verified. You can log in now."
+            : "Email not verified yet. Use the button below if you can't find the link."}
+        </div>
+      )}
 
       {/* Email + password login */}
       <form className="mt-8 space-y-4" onSubmit={HandleSignIn}>
@@ -159,6 +212,17 @@ const handleGoogleSignIn = async () => {
 >
   {isLoading ? "Logging in..." : "Login"}
 </button>
+
+        {(emailVerified || needsVerification) && (
+          <button
+            type="button"
+            onClick={handleResendVerification}
+            disabled={resending}
+            className="btn btn-ghost btn-sm text-primary"
+          >
+            {resending ? "Sending..." : "Resend verification email"}
+          </button>
+        )}
 
         <div className="flex items-center gap-3 py-1">
           <span className="h-px flex-1 bg-base-300" />

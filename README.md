@@ -56,6 +56,8 @@ NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
 NEXT_PUBLIC_IMGBB_API_KEY=<your imgbb key>
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=<your stripe publishable key>
+RESEND_API_KEY=<your resend api key>
+EMAIL_FROM=EquipRent <onboarding@resend.dev>
 
 BETTER_AUTH_SECRET=<your secret>
 BETTER_AUTH_DB_URI=<your mongodb connection string>
@@ -64,11 +66,34 @@ BETTER_AUTH_GOOGLE_CLIENT_ID=<your google client id>
 BETTER_AUTH_GOOGLE_CLIENT_SECRET=<your google client secret>
 ```
 
+A ready-to-copy template is in `.env.example`.
+
+## Email verification (Resend)
+
+One API key is used for the **whole website** — users never enter their own
+email credentials anywhere.
+
+1. Sign up at <https://resend.com> using the email address you will test with.
+2. Open **API Keys** → **Create API Key** → copy the key (starts with `re_...`).
+3. Paste it into `.env`: `RESEND_API_KEY=re_your_key_here`.
+4. Restart `npm run dev` (env vars are read only at startup).
+5. Register with that same email — the verification link arrives in the inbox.
+6. Click the link → redirected to `/login?verified=1` → log in.
+
+With the free `onboarding@resend.dev` sender you can only send to your own
+Resend email. For production, verify your domain in Resend and set
+`EMAIL_FROM=EquipRent <no-reply@yourdomain.com>`; then any registered user
+receives the email. Add `RESEND_API_KEY` to your hosting platform's environment
+variables as well.
+
+Without a key, the verification link is printed in the terminal so the flow can
+still be tested locally.
+
 ## npm packages used
 
 **Dependencies:** `@base-ui/react`, `@better-auth/mongo-adapter`,
 `@stripe/stripe-js`, `better-auth`, `class-variance-authority`, `cn`,
-`es-toolkit`, `framer-motion`, `lucide-react`, `mongodb`, `next`, `react`,
+`es-toolkit`, `framer-motion`, `lucide-react`, `mongodb`, `next`, `nodemailer`, `react`,
 `react-dom`, `recharts`, `shadcn`, `sonner`, `stripe`, `tw-animate-css`,
 `node-cron`.
 
